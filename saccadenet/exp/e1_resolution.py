@@ -139,7 +139,8 @@ def main() -> None:
         store = ExperimentStore(args.resume, manifest, create=False)
     else:
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-        run_dir = Path("runs") / f"{stamp}-{manifest['git_head'][:8]}-e1-{'smoke' if args.smoke else 'final'}"
+        tag = cfg.get("run_tag", "e1")
+        run_dir = Path("runs") / f"{stamp}-{manifest['git_head'][:8]}-{tag}-{'smoke' if args.smoke else 'final'}"
         store = ExperimentStore(run_dir, manifest, create=True)
         with (store.run_dir / "config.json").open("x", encoding="utf-8") as file:
             json.dump(cfg, file, indent=2)
