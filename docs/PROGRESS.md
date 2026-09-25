@@ -1,6 +1,6 @@
 # SaccadeNet 进度看板
 
-更新时间：2026-09-25（Asia/Taipei）。阶段：**实施中，T01–T05、T10–T11完成；T06–T09验证中，T12正式运行中**。H0为22:13。
+更新时间：2026-09-26 00:20（Asia/Taipei）。阶段：**正式E1完成并审计；T12–T14完成；D24/D26事后分析完成；E5外推检验运行中；下一步T15报告**。H0为2026-09-25 22:13；提交截止按2026-09-27 12:00排期（依据同赛道记录，用户确认只交SaccadeNet）。
 
 详细步骤的唯一勾选来源：[执行计划](superpowers/plans/2026-09-25-saccadenet-execution-plan.md)。这里的勾选只代表整个阶段通过，不能代替步骤证据。
 
@@ -19,14 +19,14 @@
 |---|---|---|---|---|
 | [x] | G0：T01–T02 环境、范围和预检 | 完成 | Codex | `docs/environment.md`、`docs/scope.md`、spike逐局数据；CUDA张量求和4096 |
 | [ ] | G1：T03–T09 数据、视网膜、模型与闭环 | T03–T05完成；T06–T09实现待完整验收 | Codex | 62项测试通过；1080p/16K各10局开发试跑命中10/10、9/10 |
-| [ ] | G2：T10–T12 三条基线与正式 E1 | T10–T11完成；T12运行中 | Codex | 最终schema开发32/32成功；70项测试通过；正式run`runs/20260925T152349319841Z-a6a00495-e1-final` |
-| [ ] | G3：T13–T15 图表、回放和论文证据 | 未开始 | 开工时认领 | 无 |
+| [x] | G2：T10–T12 三条基线与正式 E1 | 完成 | Codex→Claude | 正式run`runs/20260925T152349319841Z-a6a00495-e1-final` 1,520/1,520；审计与抽核见`reports/e1/qa.md` |
+| [ ] | G3：T13–T15 图表、回放和论文证据 | T13、T14完成；T15进行中 | Claude | 图4/5/5b/6；离线HTML回放`reports/replay/manifest-*.json` |
 | [ ] | G4：T16 冻结、复现与提交包 | 未开始 | 开工时认领 | 无 |
 | [ ] | P1-A：T17 融合与策略 E3 | 未开始，可选 | 尚未分配 | 无 |
 | [ ] | P1-B：T18 两阶段密度 E3b | 未开始，可选 | 尚未分配 | 无 |
-| [ ] | P1-C：T19 其他扩展 | 未开始，可选 | 尚未分配 | 无 |
+| [ ] | P1-C：T19 其他扩展 | 交互回放完成；E5外推（计划外新增，D27）运行中 | Claude | `saccadenet/viz/demo_player.py`；E5 run见下 |
 
-**P0 实施任务完成：7/16（T01–T05、T10、T11）。** T06–T09代码存在但尚未完整验收；T12正式E1仍在运行。
+**P0 实施任务完成：10/16（T01–T05、T10–T14）。** T06–T09代码已被正式E1使用，但计划中的部分验收步骤（真实视网膜重建增强、d′曲线图、协方差诊断等）未完成，未勾选；T15、T16进行中/未开始。
 
 ## 待核实的信息
 
@@ -55,5 +55,11 @@
 - 2026-09-25，T10–T11验收，负责人Codex。最终schema开发32局在`runs/20260925T151923188489Z-d222f1d5-e1-smoke`均成功；四档各方法至少3局开发预检，额外样本见`reports/spikes/baseline_feasibility.md`。`pytest -q`70通过，T11 dry-run=1,520局，断点恢复/配置哈希/截断trace测试通过。权重、标定与配置以`configs/e1.yaml`为准；正式测试未启动。旧失败run仅保留用于审计，不与正式图混用。
 - 2026-09-25，T02，负责人Codex。固定稀疏/密集toy各200试次，B增益相对MAP少15.7%/19.3%平均眼数，未过预设20%门槛，策略卖点降级。S2视网膜/候选/可读性、S3四档滑窗吞吐、S4口头草稿、S5范围复核均在`docs/scope.md`并链接原始数据；赛事提交格式、截止与外部可理解性未获信息。提交标题见Git历史。
 - 2026-09-25，T12启动，负责人Codex。正式E1命令`.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e1.yaml`；运行目录`runs/20260925T152349319841Z-a6a00495-e1-final`，提交`a6a0049`且manifest记录clean。1520局持续逐行写入，完成前不出正式图或结论；终端会话ID 61702（若会话消失，以`--resume`命令续跑）。
+- 2026-09-25 23:46，交接，负责人Claude。Codex于23:40额度耗尽。接手时有未提交的`docs/report.md`与分析/图/回放代码，报告引用的`reports/e1/qa.md`缺失。已按任务拆成4个提交保存；73项测试通过；用`episodes.csv`独立复算16组结果，与报告一致。
+- 2026-09-25，T12/T13，负责人Claude。`scripts/qa_e1_crosscheck.py`对5组汇总和5条逐局做episodes→summary→图→trace抽核，`ALL_CONSISTENT=True`，证据见`reports/e1/qa.md`。新发现：10个未命中中8个是越过τ后停在错卡的过度自信错停。
+- 2026-09-26，D24/D25，负责人Claude。先登记预测再运行。`runs/20260925T155609286059Z-71b803aa-g2v2-final`（71b803a，clean，400/400）用v2尺度增强权重重跑一段缩图，命中率为1080p 63%、4K 4%、8K 0%、16K 0%。翻转点落在W_c=2048两侧，P24b、P24c支持，P24a证据不足。图`reports/e1/g2-sensitivity-*/`。
+- 2026-09-26，D26，负责人Claude。`python -m saccadenet.exp.trace_analysis --run <E1>`：实测发现概率曲线与解析视野半径r1=1844、r2=3688相符；未命中全部选错卡，候选偏差中位数约32px（命中局约12px）。图6见`reports/analysis/trace-analysis-*/`。
+- 2026-09-26，T14，负责人Claude。`python -m saccadenet.viz.demo_player`导出离线HTML播放器，支持"网络所见"和"真实画面"切换，并与同种子的基线对比成本。导出时自动校验帧数和成本；file://离线打开已验证。清单`reports/replay/manifest-*.json`，产物在`artifacts/demo/`（忽略目录）。
+- 2026-09-26，E5/D27，负责人Claude。第一次运行`runs/20260925T161406097212Z-7ff5cbd4-e5-final`因未跟踪的`.claude/`被记成dirty，只跑了1局就停止，目录保留备审计；该目录已加入忽略后，从a466074（clean）重跑`runs/20260925T161450886661Z-a4660741-e5-final`，共150局。运行中发现C盘被系统pagefile.sys扩张占满（剩余0字节），需用户处理，见HANDOFF。
 
 规划验收记录（2026-09-25）：7份新增Markdown文档的本地链接与代码块配对检查通过；详细计划含T01–T19共19项任务、121个未执行步骤、0个已勾选实施步骤；两份原始总结对Git快照无差异。规划提交标题：`docs: add execution plan and handoff tracking`。此检查不等于模型测试通过。
