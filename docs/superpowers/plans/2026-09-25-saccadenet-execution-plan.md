@@ -186,48 +186,48 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`saccadenet/models/fovea.py`、`train_fovea.py`、`tests/test_fovea.py`、`configs/train.yaml`、`reports/fovea/metrics.csv`。
 
-- [ ] 定义轻量全卷积网络：4级Conv/ReLU/Pool2，通道16/32/64/64，卷积核依次5/3/3/3，全部valid无padding；96输入逐级成为46/22/10/4，再Conv4×4到11类。感受野96、输出步长16，提供patch与dense入口；全图边界统一外部padding，不能在每层padding后声称patch/dense天然等价。
-- [ ] 写测试：输出N×11；patch与dense对应窗口输出一致；N=1/多batch均可；固定种子训练恢复能继续同一优化状态。
-- [ ] 构建0–9数字加空背景的训练样本；增强来自真实视网膜重建、定位偏差、噪声和部分数字，不能只用理想高清MNIST。
-- [ ] 先过拟合小批次检查标签/梯度；再完整训练，记录Adam学习率/批大小/epoch，开发集早停只选开发指标；8GB显存从batch64试起，不足则32/16。
-- [ ] 保存模型、优化器、随机状态、epoch和配置hash；用新命名checkpoint保留历史，恢复必须匹配配置。最终分类测试分别报告11类宏平均、总体准确率与空背景误报，清晰数字≥98%单独评估。
-- [ ] 运行`python -m pytest tests/test_fovea.py -q`和`python -m saccadenet.models.train_fovea --config configs/train.yaml`；命令完成后将真实checkpoint路径/hash写入报告。
-- [ ] 提交`feat(T06): train and validate shared foveal classifier`；权重不进Git，提交指标/清单/恢复命令。
+- [x] 定义轻量全卷积网络：4级Conv/ReLU/Pool2，通道16/32/64/64，卷积核依次5/3/3/3，全部valid无padding；96输入逐级成为46/22/10/4，再Conv4×4到11类。感受野96、输出步长16，提供patch与dense入口；全图边界统一外部padding，不能在每层padding后声称patch/dense天然等价。核对`saccadenet/models/fovea.py`，结构与计划一致（2026-09-26，Claude）。
+- [x] 写测试：输出N×11；patch与dense对应窗口输出一致；N=1/多batch均可；固定种子训练恢复能继续同一优化状态。`tests/test_fovea.py`三项通过。
+- [ ] 构建0–9数字加空背景的训练样本；增强来自真实视网膜重建、定位偏差、噪声和部分数字，不能只用理想高清MNIST。【未完成】增强只用模糊、偏移和噪声，没有用真实视网膜重建；失败分析显示候选定位偏差是主要错误来源（report“失败机制”）。
+- [ ] 先过拟合小批次检查标签/梯度；再完整训练，记录Adam学习率/批大小/epoch，开发集早停只选开发指标；8GB显存从batch64试起，不足则32/16。【部分】训练日志在`reports/fovea/training-*.csv`，但没有找到小批次过拟合检查的记录。
+- [x] 保存模型、优化器、随机状态、epoch和配置hash；用新命名checkpoint保留历史，恢复必须匹配配置。最终分类测试分别报告11类宏平均、总体准确率与空背景误报，清晰数字≥98%单独评估。留出测试：总体98.35%，清晰数字98.17%，空背景误报0（`reports/fovea/heldout-*.json`）。
+- [x] 运行`python -m pytest tests/test_fovea.py -q`和`python -m saccadenet.models.train_fovea --config configs/train.yaml`；命令完成后将真实checkpoint路径/hash写入报告。权重路径与hash见HANDOFF。
+- [x] 提交`feat(T06): train and validate shared foveal classifier`；权重不进Git，提交指标/清单/恢复命令。实际提交为`d222f1d`与`feat(T06): held-out 11-class foveal metrics on MNIST test`。
 
 ### T07 — 标定、机器视力表与s_min（约1h设置+数据收集，依赖T05/T06）
 
 文件：`saccadenet/bayes/calibrate.py`、`tests/test_calibration.py`、`configs/calibration.yaml`、`reports/calibration/`。
 
-- [ ] 在calibration split采集目标/非目标查询log-odds，初始离心率箱边界为0/24/48/72/96/144/216/324/486/972/17624 px；每箱尽量≥200目标与200非目标，报告实际n及无效mask数量。
-- [ ] 拟合共享方差μ0/μ1/σ与d′；实现σ最小值保护、非有限数拒绝、μ1≈μ0或d′<.1跳过，不能除以近零分母。
-- [ ] 写合成高斯测试：归一化证据均值应接近0/1、d′估计误差在固定容差内；低信号箱不得生成NaN/无限LLR。
-- [ ] 拟合d′(e)曲线并与分箱值画在一起；重点检查e=96处d′>1是否成立。非单调或CNN定位误差大时，使用保守分段单调拟合，记录偏离原因。
-- [ ] 在独立标定样本将48像素数字依次缩为4/6/8/10/12/16/24/32/48像素，再按统一管线识别；s_min定义为准确率≥90%的最小测试尺寸，记录离散区间，再登记W_c。
-- [ ] Gaussian明显不合时用Platt得到单眼LLR，通过`FusionB.update_llr(id,llr,quality)`保存“质量最高一眼的LLR”，路由d′仍单独标定，不能把LLR误传成x。标明精确高斯推导不再适用。
-- [ ] 运行`python -m pytest tests/test_calibration.py -q`、`python -m saccadenet.bayes.calibrate --config configs/calibration.yaml`；提交`feat(T07): calibrate evidence and preregister collapse prediction`。
+- [ ] 在calibration split采集目标/非目标查询log-odds，初始离心率箱边界为0/24/48/72/96/144/216/324/486/972/17624 px；每箱尽量≥200目标与200非目标，报告实际n及无效mask数量。【部分】每箱250/250；实际箱边界的最后一箱为972–2000px；没有报告无效mask数量。
+- [x] 拟合共享方差μ0/μ1/σ与d′；实现σ最小值保护、非有限数拒绝、μ1≈μ0或d′<.1跳过，不能除以近零分母。`GaussianCalibrator`：σ下限1e-6、拒绝非有限值、d′<0.1时跳过。
+- [x] 写合成高斯测试：归一化证据均值应接近0/1、d′估计误差在固定容差内；低信号箱不得生成NaN/无限LLR。`tests/test_calibration.py`。
+- [x] 拟合d′(e)曲线并与分箱值画在一起；重点检查e=96处d′>1是否成立。非单调或CNN定位误差大时，使用保守分段单调拟合，记录偏离原因。图7（`reports/analysis/two-horizons-20260925T162139021800Z/`）：96–144px处d′=1.91>1，单调下降。
+- [x] 在独立标定样本将48像素数字依次缩为4/6/8/10/12/16/24/32/48像素，再按统一管线识别；s_min定义为准确率≥90%的最小测试尺寸，记录离散区间，再登记W_c。s_min的CSV见`reports/calibration/s-min-*.csv`；W_c见D20与D24。
+- [ ] Gaussian明显不合时用Platt得到单眼LLR，通过`FusionB.update_llr(id,llr,quality)`保存“质量最高一眼的LLR”，路由d′仍单独标定，不能把LLR误传成x。标明精确高斯推导不再适用。【未做】没有做高斯拟合优度或协方差诊断，Platt回退只用于两阶段基线。
+- [x] 运行`python -m pytest tests/test_calibration.py -q`、`python -m saccadenet.bayes.calibrate --config configs/calibration.yaml`；提交`feat(T07): calibrate evidence and preregister collapse prediction`。提交`d222f1d`。
 
 ### T08 — 融合B、路由、探索与停机（约1h，依赖T07）
 
 文件：`saccadenet/bayes/fusion.py`、`policy.py`、`tests/test_fusion.py`、`tests/test_policy.py`。
 
-- [ ] 写B反例测试：低质量支持目标后，高质量否定目标，LLR必须变负；重复同质量不能增加信心；更差质量不能覆盖已有证据。
-- [ ] 实现D_i=max d′²、LLR=D_i(x*−.5)，用稳定log-softmax归一化；新候选以中性证据加入，已有候选证据不丢失；位置重置遵循D08。
-- [ ] 构造Ω=候选中心+距离<2e_half的两两中点，按画布裁界、去重；G(k)=sum p_i[d′²(e_ik)−D_i]_+，p≤1e−4跳过，确定性平局规则。
-- [ ] 实现MAP与D05探索；空候选、单候选、零增益、搜索耗尽都有可解释结果，不能空数组argmax或卡死。
-- [ ] 实现D04覆盖门槛、τ与T_max；最后一眼也应生成answer和trace。记录`threshold`/`max_steps`/`search_exhausted`/`no_candidates`等原因。
-- [ ] 运行`python -m pytest tests/test_fusion.py tests/test_policy.py -q`；固定玩具可选出两候选中点，若实际标定没有优势则不强造中点演示。
-- [ ] 提交`feat(T08): add evidence fusion and guarded search policy`。
+- [x] 写B反例测试：低质量支持目标后，高质量否定目标，LLR必须变负；重复同质量不能增加信心；更差质量不能覆盖已有证据。`tests/test_fusion.py`。
+- [x] 实现D_i=max d′²、LLR=D_i(x*−.5)，用稳定log-softmax归一化；新候选以中性证据加入，已有候选证据不丢失；位置重置遵循D08。
+- [x] 构造Ω=候选中心+距离<2e_half的两两中点，按画布裁界、去重；G(k)=sum p_i[d′²(e_ik)−D_i]_+，p≤1e−4跳过，确定性平局规则。`tests/test_policy.py`中点用例。
+- [x] 实现MAP与D05探索；空候选、单候选、零增益、搜索耗尽都有可解释结果，不能空数组argmax或卡死。空候选、单候选、探索耗尽都有测试。
+- [x] 实现D04覆盖门槛、τ与T_max；最后一眼也应生成answer和trace。记录`threshold`/`max_steps`/`search_exhausted`/`no_candidates`等原因。正式E1中出现的原因有threshold和search_exhausted。
+- [x] 运行`python -m pytest tests/test_fusion.py tests/test_policy.py -q`；固定玩具可选出两候选中点，若实际标定没有优势则不强造中点演示。
+- [x] 提交`feat(T08): add evidence fusion and guarded search policy`。实际并入`d222f1d`。
 
 ### T09 — 闭环、成本事件与真值隔离（约1h，依赖T03–T08）
 
 文件：`saccadenet/run/episode.py`、`evaluate.py`、`saccadenet/cost/accounting.py`、`tests/test_episode.py`、`tests/test_cost.py`、`tests/test_no_truth_leak.py`。
 
-- [ ] 先写故意在读取真值时抛异常的测试对象；Level 2完整循环不应触发；评测可以读取它。禁止Detector、candidate_view、score等接受pyramid/img参数或经全局变量读取。
-- [ ] 串联Sensor→检测→反投影→CNN→标定→B→停机/路由，用统一EpisodeLog；生成与评分在循环之外。仅传query，不传目标索引。
-- [ ] 实现按组件的成本事件和累计次数；CNN单次profile×实际batch样本数，不遗漏检测、反投影、探索失败眼；不能重复计费金字塔。
-- [ ] 写测试：每眼成本非负、累计单调、金字塔仅一次；跳过候选无CNN计费；已知小网络手算与profile一致；失败局也有部分成本。
-- [ ] 1080p先用Level 1诊断入口排除融合问题，再切Level 2，至少10局开发数据跑完；这是H14门禁，不要求这10局就达到最终准确率。
-- [ ] 运行`python -m pytest tests/test_episode.py tests/test_cost.py tests/test_no_truth_leak.py -q`，保存一局trace；提交`feat(T09): close the measured Level 2 episode loop`。
+- [x] 先写故意在读取真值时抛异常的测试对象；Level 2完整循环不应触发；评测可以读取它。禁止Detector、candidate_view、score等接受pyramid/img参数或经全局变量读取。`tests/test_no_truth_leak.py`与`tests/test_episode.py`。
+- [x] 串联Sensor→检测→反投影→CNN→标定→B→停机/路由，用统一EpisodeLog；生成与评分在循环之外。仅传query，不传目标索引。
+- [x] 实现按组件的成本事件和累计次数；CNN单次profile×实际batch样本数，不遗漏检测、反投影、探索失败眼；不能重复计费金字塔。trace中有detector、reconstruction、cnn、belief、routing分项。
+- [x] 写测试：每眼成本非负、累计单调、金字塔仅一次；跳过候选无CNN计费；已知小网络手算与profile一致；失败局也有部分成本。`tests/test_cost.py`；正式E1审计中成本单调、非负。
+- [ ] 1080p先用Level 1诊断入口排除融合问题，再切Level 2，至少10局开发数据跑完；这是H14门禁，不要求这10局就达到最终准确率。【部分】做了10局以上Level 2开发试跑（`reports/spikes/episode-smoke-*.csv`），但代码中没有Level 1诊断入口。
+- [x] 运行`python -m pytest tests/test_episode.py tests/test_cost.py tests/test_no_truth_leak.py -q`，保存一局trace；提交`feat(T09): close the measured Level 2 episode loop`。提交`d222f1d`。
 
 ### T10 — 三条P0基线与16K分块（约2h，依赖T06/T09）
 
@@ -289,13 +289,13 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`docs/architecture.md`、`docs/references.md`、`docs/report.md`、`reports/presentation-outline.md`。
 
-- [ ] 先写问题/假设/采样推导/观测模型/融合B/成本口径/实验方法骨架；所有图表位置指向真实产物，不写预定成功数字。
-- [ ] 核对N(R)、离散环数、边界mask、d′与LLR、B按质量替换、ELM增益非Shannon熵减，以及固定K/增长K/无候选三种条件。
-- [ ] 逐条找一手论文/官方来源核验RAM、Najemnik-Geisler、采样定律、MNIST等关键引用；原方案引文列表未核实项不进入已验证引用，创新性措辞保持可支持范围。
-- [ ] 补真实实验配置、split、样本数、区间、硬件、时间、候选召回和成本分解；明确Level 2未知目标质量未建模、D04保护的局限、确定性重复观测问题。
-- [ ] 对照三条基线解释图4/5，即使两阶段更好也如实写；“总代价不随分辨率增长”“首次logR”“静态模型C一定精确”等表述不得出现。
-- [ ] 写四个答辩问题的短答：前端是否读全图、网络创新在哪里、与RAM区别、与两阶段区别；每个答复链接到证据或文献。
-- [ ] 按赛事实际页数/格式完成报告、幻灯片提纲；人工核查图号/数值/来源/引用一致，提交`docs(T15): explain measured findings and limitations`。
+- [x] 先写问题/假设/采样推导/观测模型/融合B/成本口径/实验方法骨架；所有图表位置指向真实产物，不写预定成功数字。`docs/report.md`（2026-09-26，Claude）。
+- [x] 核对N(R)、离散环数、边界mask、d′与LLR、B按质量替换、ELM增益非Shannon熵减，以及固定K/增长K/无候选三种条件。环数见D18；新增视野半径推导与覆盖律；增长K和无卡片两种情况写为未实测的模型预测。
+- [x] 逐条找一手论文/官方来源核验RAM、Najemnik-Geisler、采样定律、MNIST等关键引用；原方案引文列表未核实项不进入已验证引用，创新性措辞保持可支持范围。`docs/references.md`（新增Treisman & Gelade 1980）。
+- [x] 补真实实验配置、split、样本数、区间、硬件、时间、候选召回和成本分解；明确Level 2未知目标质量未建模、D04保护的局限、确定性重复观测问题。
+- [x] 对照三条基线解释图4/5，即使两阶段更好也如实写；“总代价不随分辨率增长”“首次logR”“静态模型C一定精确”等表述不得出现。另有“与两阶段的关系”一节。
+- [x] 写四个答辩问题的短答：前端是否读全图、网络创新在哪里、与RAM区别、与两阶段区别；每个答复链接到证据或文献。另外新增了四条。
+- [ ] 按赛事实际页数/格式完成报告、幻灯片提纲；人工核查图号/数值/来源/引用一致，提交`docs(T15): explain measured findings and limitations`。【待赛事格式】已有`reports/presentation-outline.md`；页数和格式要求仍未获得。
 
 ### T16 — 复现、冻结、交接与提交包（约2h，依赖T13–T15）
 
