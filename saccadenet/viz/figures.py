@@ -134,12 +134,57 @@ def render(run_dir: Path, out: Path, *, bootstrap: int = 2000) -> Path:
     return target
 
 
+def render_g2_sensitivity(main_run: Path, supplement_run: Path, out: Path, *, s_min: dict[str, int]) -> Path:
+    """Figure 5b: one-stage downsample accuracy with the frozen v1 vs the scale-augmented v2 classifier."""
+    main_rows = [row for row in build_plot_data(main_run, bootstrap=0) if row["method"] == "downsample_1stage"]
+    supp_rows = [row for row in build_plot_data(supplement_run, bootstrap=0) if row["method"] == "downsample_1stage"]
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    target = out / f"g2-sensitivity-{stamp}"
+    target.mkdir(parents=True, exist_ok=False)
+    with (target / "plot-data.csv").open("x", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=("classifier", "width", "n", "hits", "accuracy", "wilson_low", "wilson_high"))
+        writer.writeheader()
+        for label, rows in (("v1", main_rows), ("v2", supp_rows)):
+            for row in rows:
+                writer.writerow({"classifier": label, **{key: row[key] for key in ("width", "n", "hits", "accuracy", "wilson_low", "wilson_high")}})
+    plt.rcParams.update({"font.size": 10, "axes.spines.top": False, "axes.spines.right": False})
+    fig, ax = plt.subplots(figsize=(9, 5))
+    fig.subplots_adjust(left=0.1, right=0.97, bottom=0.2, top=0.9)
+    for (label, rows), color, style in zip((("v1", main_rows), ("v2", supp_rows)), ("#5951a5", "#b5179e"), ("-", "--")):
+        x = np.array([row["width"] for row in rows])
+        y = np.array([row["accuracy"] for row in rows])
+        err = np.stack((np.maximum(0, y - [row["wilson_low"] for row in rows]), np.maximum(0, np.array([row["wilson_high"] for row in rows]) - y)))
+        name = f"{label}: {'frozen E1, 48px-only' if label == 'v1' else 'scale-aug, post-hoc D24'}, s_min={s_min[label]}px"
+        ax.errorbar(x, y, yerr=err, marker="o", capsize=3, color=color, linestyle=style, label=name)
+        critical = 48 * 1024 / s_min[label]
+        ax.axvline(critical, color=color, linestyle=":", linewidth=1.2)
+        ax.text(critical, 0.93, f" W_c={critical:.0f}px", color=color, fontsize=8, rotation=90, va="top")
+    ax.axhline(1 / 12, color="#777777", linestyle=":", linewidth=1, label="Random (1/12)")
+    ax.set_xscale("log", base=2)
+    ax.set_xticks([1920, 3840, 7680, 15360], ["1080p", "4K", "8K", "16K"])
+    ax.set_ylim(-0.04, 1.0)
+    ax.set_xlabel("Image width")
+    ax.set_ylabel("Target-hit accuracy (1024px one-stage)")
+    ax.set_title("Figure 5b. Downsample collapse vs classifier scale range")
+    ax.legend(loc="upper right", fontsize=8, frameon=False)
+    fig.text(0.1, 0.07, "Same 400 final_test canvases; 95% Wilson CI; dotted W_c = 48*1024/s_min (predicted critical width).", fontsize=7)
+    fig.text(0.1, 0.035, f"v1: {main_run.name}   v2: {supplement_run.name}", fontsize=7)
+    fig.savefig(target / "figure5b-g2-sensitivity.png", dpi=180)
+    fig.savefig(target / "figure5b-g2-sensitivity.svg")
+    plt.close(fig)
+    return target
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=Path("reports/e1"))
+    parser.add_argument("--g2-supplement", type=Path, help="D24 run; renders Figure 5b instead of Figure 4/5")
     args = parser.parse_args()
-    print(render(args.run, args.out))
+    if args.g2_supplement:
+        print(render_g2_sensitivity(args.run, args.g2_supplement, args.out, s_min={"v1": 48, "v2": 24}))
+    else:
+        print(render(args.run, args.out))
 
 
 if __name__ == "__main__":
