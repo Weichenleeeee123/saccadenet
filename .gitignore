@@ -1,0 +1,20 @@
+# Local environments and tool caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets and machine-local configuration
+.env
+.env.*
+!.env.example
+
+# Large/generated experiment assets; retain files locally
+/data/
+/checkpoints/
+/runs/
+/artifacts/
+
+# Keep configs/, tests/, docs/, reports/ and source code versioned.
