@@ -64,4 +64,3 @@ class EpisodeLog:
 
 class Sensor(Protocol):
     def observe(self, fixation_xy: tuple[float, float]) -> RetinaOut: ...
-

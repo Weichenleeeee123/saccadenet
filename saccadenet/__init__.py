@@ -1,2 +1,1 @@
 """SaccadeNet experiment code."""
-

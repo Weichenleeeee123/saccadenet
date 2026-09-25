@@ -11,4 +11,3 @@ description = "Bayesian foveated visual search experiment"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-

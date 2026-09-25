@@ -1,0 +1,9 @@
+{
+  "checkpoint_sha256": "3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9",
+  "source": "MNIST/train/calibration/50000:55000",
+  "seed": 501,
+  "s_min": 48,
+  "predicted_collapse_width": 1024.0,
+  "threshold_accuracy": 0.9,
+  "csv": "reports\\calibration\\s-min-20260925T145700296334Z-3d80b18c.csv"
+}
