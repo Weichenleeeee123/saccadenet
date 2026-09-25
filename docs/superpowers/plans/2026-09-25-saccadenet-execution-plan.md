@@ -279,11 +279,11 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`saccadenet/viz/export_replay.py`、`reports/replay/manifest.json`、`artifacts/replay/<episode_id>/`。
 
-- [ ] 选一局有代表性的成功例与一局失败例，记录选择理由，不声称是随机抽样；从已保存trace生成，不重新运行另一版本模型。
-- [ ] 主画面展示缩略图、编号注视轨迹、已发现候选与后验、累计semantic/sensing计数；最终答案与真值由评测层叠加，不能回流推理。
-- [ ] 每步可附中央凹与logpolar观察，表明实际网络输入；P0不做交互播放器，不把高清完整图嵌入每帧。
-- [ ] 运行`python -m saccadenet.viz.export_replay --run <真实run_dir> --episode <实际ID> --format png`，逐帧PNG为底线，GIF可选；断网验证至少一个完整回放能打开。
-- [ ] 检查帧数与trace步数一致、坐标/数字标注一致、成本终值与CSV一致；提交`demo(T14): export auditable offline replay`及清单，小型预览可进Git。
+- [x] 选一局有代表性的成功例与一局失败例，记录选择理由，不声称是随机抽样；从已保存trace生成，不重新运行另一版本模型。16K种子30000（首个种子）与1080p种子30002（首个失败），理由写入`reports/replay/manifest-*.json`。
+- [x] 主画面展示缩略图、编号注视轨迹、已发现候选与后验、累计semantic/sensing计数；最终答案与真值由评测层叠加，不能回流推理。HTML播放器与PNG帧均实现。
+- [x] 每步可附中央凹与logpolar观察，表明实际网络输入；P0不做交互播放器，不把高清完整图嵌入每帧。HTML另有“网络所见”重建（测试等价于candidate_view）。P0之外追加了交互播放器，见T19。
+- [x] 运行`python -m saccadenet.viz.export_replay --run <真实run_dir> --episode <实际ID> --format png`，逐帧PNG为底线，GIF可选；断网验证至少一个完整回放能打开。PNG帧由Codex导出；HTML由`python -m saccadenet.viz.demo_player`导出，file://离线打开已用Edge headless验证。
+- [x] 检查帧数与trace步数一致、坐标/数字标注一致、成本终值与CSV一致；提交`demo(T14): export auditable offline replay`及清单，小型预览可进Git。导出时自动校验帧数/步数/末帧语义FLOPs与episodes.csv一致。
 
 ### T15 — 数学说明、文献核验与报告（约2h骨架，H46后集中完善，依赖T02；结果部分依赖T12/T13）
 
@@ -336,7 +336,7 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 - [ ] E2（上限2h）：先只做卡片开、16K K={4,8,16,32,64}；卡片关闭在1080p/4K以64格扫，记录T_max与失败。未跑到更大图只能列外推。
 - [ ] 颜色通道（上限1h）：用retina采样颜色单独标定，扫c={0,.25,.5,1}；验证与数字证据独立性后才相加，不足则标经验模型。
 - [ ] V0-full（上限2h预检）：`models/periphery.py`吃logpolar，角度环形padding，发现+查询两头；与lite共用协议。d′或召回不优于lite立即结束预检，记录负结果，不替换P0。
-- [ ] 交互回放（上限1h）：只消费已导出的JSON/图片，增加播放进度与网络视角开关；不接实时推理。“你来当眼睛”仅有额外时间再做。
+- [x] 交互回放（上限1h）：只消费已导出的JSON/图片，增加播放进度与网络视角开关；不接实时推理。“你来当眼睛”仅有额外时间再做。`saccadenet/viz/demo_player.py`，只消费保存的trace，不接实时推理。
 - [ ] E4（上限1h配置）：中央凹64/96/128、扇区64/128/256、数字32/48/64与背景对比度做单因素扫，受影响权重/标定须重建，不复用失配标定。没时间就不启动。
 - [ ] 每项分别记录文件、配置、种子、命令、结果与提交；没做的保持未勾选，不把T19整体当成单一完成项。
 

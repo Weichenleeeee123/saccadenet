@@ -120,12 +120,16 @@ def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict
             "sensing_flops": float(step["costs"]["sensing_flops"]),
             "sensing_bytes": float(step["costs"]["sensing_bytes"]),
         })
+    baselines = _baselines(run_dir, key[1], key[3])
+    own = baselines.get("saccadenet_lite")
+    if own is None or own["steps"] != len(steps) or not math.isclose(own["semantic_flops"], steps[-1]["semantic_flops"]):
+        raise ValueError(f"demo frames disagree with episodes.csv for {spec}")
     return {
         "id": episode_id, "spec": spec, "note": note, "width": key[1], "height": key[2], "seed": key[3],
         "query": int(trace["query"]), "reason": trace["reason"], "attempt_id": trace["attempt_id"],
         "answer": [float(v) for v in trace["answer_xy"]] if trace["answer_xy"] is not None else None,
         "truth": [float(v) for v in target_xy], "zoom_span": zoom_span,
-        "stage": [STAGE_WIDTH, stage_h], "steps": steps, "baselines": _baselines(run_dir, key[1], key[3]),
+        "stage": [STAGE_WIDTH, stage_h], "steps": steps, "baselines": baselines,
     }
 
 
@@ -143,6 +147,18 @@ def export_demo(run_dir: Path, episodes: list[tuple[str, str]], out: Path) -> Pa
         "episodes": [export_episode(run_dir, spec, target, note=note) for spec, note in episodes],
     }
     (target / "data.js").write_text("window.DEMO_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n", encoding="utf-8")
+    manifest_dir = Path("reports/replay")
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "demo_dir": str(target), "source_run": run_dir.name, "source_git_head": manifest["git_head"],
+        "checkpoint_sha256": manifest["checkpoint_sha256"], "generated_utc": stamp,
+        "checks": "frame count == trace steps == episodes.csv steps; last-frame semantic FLOPs == episodes.csv; regenerated target == saved truth",
+        "episodes": [{"spec": e["spec"], "selection_reason": e["note"], "frames": len(e["steps"]), "reason": e["reason"],
+                      "hit": e["baselines"]["saccadenet_lite"]["hit"]} for e in data["episodes"]],
+        "open": f"python -m http.server 8765 --directory {out}  then  http://127.0.0.1:8765/{target.name}/index.html",
+    }
+    with (manifest_dir / f"manifest-{stamp}.json").open("x", encoding="utf-8") as file:
+        json.dump(summary, file, indent=2, ensure_ascii=False)
     return target
 
 
