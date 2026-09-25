@@ -124,13 +124,13 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`pyproject.toml`、`requirements-lock.txt`、`configs/base.yaml`、`saccadenet/config.py`、`saccadenet/contracts.py`、`tests/test_config.py`、`docs/environment.md`。
 
-- [ ] 记录H0/截止时间/参与者；只读检查Python、CUDA、VRAM/RAM、磁盘。保存已确认GPU信息并检测`torch.cuda.is_available()`，不要把驱动支持当作框架可用。
-- [ ] 安装前估虚拟环境/依赖缓存/数据/权重/日志新增量，要求除此以外至少3 GiB余量；D盘不够则选择另一个可用位置并记录配置，不能自动清理。原始16K不落盘。
-- [ ] 创建独立`.venv`；按官方兼容信息选择PyTorch/torchvision组合，安装后锁定实测版本，不升级全局环境。
-- [ ] 写配置测试：负K、非法分辨率、τ不在(0,1)、非正T_max应报带字段名的错误；相同配置展开结果hash一致。
-- [ ] 建立上节契约、基准配置和RGB/坐标约定：xy以左上像素中心为原点、x向右y向下，尺寸顺序统一为W/H，网络张量NCHW float32 [0,1]。
-- [ ] 运行`python -m pytest tests/test_config.py -q`；预期全通过。运行CPU和GPU各一次固定小张量前向，记录精度/耗时仅作环境验证。
-- [ ] 提交`chore(T01): define reproducible runtime and contracts`，记录测试与实际硬件，勾选T01。
+- [x] 记录H0/截止时间/参与者；只读检查Python、CUDA、VRAM/RAM、磁盘。保存已确认GPU信息并检测`torch.cuda.is_available()`，不要把驱动支持当作框架可用。
+- [x] 安装前估虚拟环境/依赖缓存/数据/权重/日志新增量，要求除此以外至少3 GiB余量；D盘不够则选择另一个可用位置并记录配置，不能自动清理。原始16K不落盘。
+- [x] 创建独立`.venv`；按官方兼容信息选择PyTorch/torchvision组合，安装后锁定实测版本，不升级全局环境。因磁盘紧张，实际使用继承系统科学库的venv；偏离详见D16。
+- [x] 写配置测试：负K、非法分辨率、τ不在(0,1)、非正T_max应报带字段名的错误；相同配置展开结果hash一致。
+- [x] 建立上节契约、基准配置和RGB/坐标约定：xy以左上像素中心为原点、x向右y向下，尺寸顺序统一为W/H，网络张量NCHW float32 [0,1]。
+- [x] 运行`python -m pytest tests/test_config.py -q`；预期全通过。运行CPU和GPU各一次固定小张量前向，记录精度/耗时仅作环境验证。
+- [x] 提交`chore(T01): define reproducible runtime and contracts`，记录测试与实际硬件，勾选T01。
 
 退出条件：独立环境可运行，契约固定。失败退路：CPU开发可继续，但完整16K资源门禁不能标通过。
 

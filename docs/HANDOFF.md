@@ -1,13 +1,13 @@
 # 接手说明
 
-更新时间：2026-09-25（Asia/Taipei）。本次交接点：仅规划。
+更新时间：2026-09-25（Asia/Taipei）。本次交接点：T01完成，T02及T03–T05原型推进中。
 
 ## 现在实际有什么
 
-- 仓库：`D:\saccadenet`；分支：`main`；本地 Git 已初始化。
+- 主仓库：`D:\saccadenet`；实施工作树：`D:\saccadenet\.worktrees\implementation`，分支`feat/implementation`。从工作树继续开发，主工作区`main`保留规划。
 - 原始文档：`docs/saccadenet_v0_summary.md`、`docs/saccadenet_v0.1_summary.md`，原样保留；快照提交 `5322323`。
 - 新增规划文档见根目录 README。规划提交可通过 `git log -5 --oneline` 查看，标题为 `docs: add execution plan and handoff tracking`。
-- 没有源代码、依赖环境、下载的数据、模型权重、正式实验、运行中的后台作业或已验证的科研结论。
+- 已有T01配置/契约与测试、Python3.12虚拟环境；T03–T05原型正在开发。尚无下载的MNIST、训练权重、正式实验或已验证的科研结论。
 - 没有远端；不能认为项目已备份到 GitHub。
 - 已只读核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；D盘剩余约9.7 GiB。尚未测试PyTorch/CUDA或吞吐。用户表示可在需要时提出租算力请求，目前没有租用。
 
@@ -20,9 +20,9 @@ git log -5 --oneline
 git remote -v
 ```
 
-随后阅读 `AGENTS.md`、`docs/PROGRESS.md`、详细计划的 T01/T02、实验协议。不要因为看见计划中的命令就开始运行；用户这轮只要求详细执行计划。
+随后进入实施工作树，阅读最新`AGENTS.md`、`docs/PROGRESS.md`、详细计划与实验协议。用户已明确授权持续实施。
 
-用户后续授权开工后，先 T01：确认 H0/截止时间、资源和队员；再 T02：做风险预检与范围冻结。默认先 V0-lite、融合 B、Level 2 E1，禁止跳到外周 CNN 或演示前端。
+H0记录为2026-09-25 22:13 +08；实际截止时间和队员仍未知，按单人56小时相对排期。当前继续T02/S2，先扩真实MNIST验证与开发召回；默认V0-lite、融合B、Level 2 E1。
 
 ## 必须记住的风险
 
@@ -47,4 +47,4 @@ git remote -v
 - 下一项唯一优先动作、阻塞条件及解除方式。
 - 复现需要的配置、权重清单、数据版本和产物位置。
 
-当前下一项：等待后续实施授权；授权后从 T01 开始。
+当前下一项：核查T03–T05现有测试与原型，完成T01提交；随后获取MNIST（记录来源和校验值）并推进T06/S2。没有已启动的后台训练作业；GPU wheel安装已完成，临时文件由pip自行管理，没有主动清理文件。
