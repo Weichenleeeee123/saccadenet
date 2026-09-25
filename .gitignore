@@ -9,6 +9,7 @@ __pycache__/
 .ruff_cache/
 
 # Secrets and machine-local configuration
+.claude/
 .env
 .env.*
 !.env.example
