@@ -2,7 +2,7 @@
 
 import argparse
 import csv
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -24,6 +24,7 @@ from saccadenet.data.canvas import make_canvas
 from saccadenet.data.mnist_bank import MnistBank
 from saccadenet.exp.store import ExperimentStore, episode_key
 from saccadenet.models.fovea import FoveaNet
+from saccadenet.retina.horizon import derived_grid, detection_horizon
 from saccadenet.retina.pyramid import build_pyramid
 from saccadenet.run.baselines import PlattCalibration, ideal_dense_flops, run_downsample_1stage, run_full_res_sliding, run_two_stage
 from saccadenet.run.episode import SceneSensor, run_episode
@@ -109,7 +110,11 @@ def run_job(
     retina_calibrator: GaussianCalibrator, two_stage_calibrator: PlattCalibration,
     *, device: torch.device, tile_outputs: int, two_stage_threshold: float,
 ):
-    if method == "saccadenet_lite":
+    if method in ("saccadenet_lite", "saccadenet_derived_grid"):
+        if method == "saccadenet_derived_grid":
+            # D27: grid from the analytic horizon, keeping the frozen 15-glimpse verification margin (40 - 5*5).
+            grid = derived_grid(config.width, config.height, detection_horizon(config.card_size, config.sectors)[0])
+            config = replace(config, exploration_grid=grid, t_max=grid * grid + 15)
         sensor = SceneSensor(build_pyramid(image), fovea_size=config.fovea_size, sectors=config.sectors)
         return run_episode(sensor, EpisodeInput(config.query, config.width, config.height, config.k), config, retina_calibrator, network, device=device)
     if method == "full_res_sliding":
@@ -195,8 +200,8 @@ def main() -> None:
                 evaluation = evaluate_answer(result.answer_xy, truth, match_radius=cfg["match_radius"])
                 candidates = result.trace[-1].get("candidates", []) if result.trace else []
                 target_xy = tuple(truth.centers_xy[truth.target_index])
-                target_recall = int(any(math.dist(item["xy"], target_xy) <= cfg["match_radius"] for item in candidates)) if method == "saccadenet_lite" else ""
-                row.update({"status": "ok", "target_hit": int(evaluation.target_hit), "reason": result.reason, "steps": result.steps, "candidate_count": len(candidates) if method == "saccadenet_lite" else "", "target_recall": target_recall, "matched_card_index": evaluation.matched_card_index, "localization_error": evaluation.localization_error, "sensing_flops": result.costs.get("sensing_flops", 0), "sensing_bytes": result.costs.get("sensing_bytes", 0), "semantic_flops": result.costs.get("semantic_flops", 0), "episode_seconds": time.perf_counter() - started, "peak_rss_bytes": process.memory_info().rss, "peak_cuda_bytes": torch.cuda.max_memory_allocated() if torch.cuda.is_available() else 0, "answer_x": result.answer_xy[0] if result.answer_xy else "", "answer_y": result.answer_xy[1] if result.answer_xy else ""})
+                target_recall = int(any(math.dist(item["xy"], target_xy) <= cfg["match_radius"] for item in candidates)) if method.startswith("saccadenet") else ""
+                row.update({"status": "ok", "target_hit": int(evaluation.target_hit), "reason": result.reason, "steps": result.steps, "candidate_count": len(candidates) if method.startswith("saccadenet") else "", "target_recall": target_recall, "matched_card_index": evaluation.matched_card_index, "localization_error": evaluation.localization_error, "sensing_flops": result.costs.get("sensing_flops", 0), "sensing_bytes": result.costs.get("sensing_bytes", 0), "semantic_flops": result.costs.get("semantic_flops", 0), "episode_seconds": time.perf_counter() - started, "peak_rss_bytes": process.memory_info().rss, "peak_cuda_bytes": torch.cuda.max_memory_allocated() if torch.cuda.is_available() else 0, "answer_x": result.answer_xy[0] if result.answer_xy else "", "answer_y": result.answer_xy[1] if result.answer_xy else ""})
                 trace = {"key": key, "attempt_id": attempt_id, "answer_xy": result.answer_xy, "truth_target_xy": target_xy, "truth_target_index": truth.target_index, "query": config.query, "reason": result.reason, "steps": result.trace, "costs": result.costs}
                 store.record(row, trace=trace)
             except Exception as exc:

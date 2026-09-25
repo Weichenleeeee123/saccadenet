@@ -7,6 +7,8 @@ from typing import Any, Mapping
 
 
 RESOLUTIONS = ((1920, 1080), (3840, 2160), (7680, 4320), (15360, 8640))
+# Out-of-range test only (D27); never part of the preregistered E1 grid.
+EXTRAPOLATION_RESOLUTIONS = ((24576, 13824),)
 
 
 @dataclass(frozen=True)
@@ -31,8 +33,8 @@ class EpisodeConfig:
     exploration_grid: int = 5
 
     def __post_init__(self) -> None:
-        if (self.width, self.height) not in RESOLUTIONS:
-            raise ValueError("resolution must be one of 1080p, 4K, 8K, or 16K")
+        if (self.width, self.height) not in RESOLUTIONS + EXTRAPOLATION_RESOLUTIONS:
+            raise ValueError("resolution must be one of 1080p, 4K, 8K, 16K, or the 24K extrapolation")
         if self.k <= 0:
             raise ValueError("k must be positive")
         if not 0 <= self.query <= 9:
