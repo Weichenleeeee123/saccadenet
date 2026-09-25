@@ -1,0 +1,78 @@
+{
+  "source_run": "20260925T152349319841Z-a6a00495-e1-final",
+  "episodes": 400,
+  "events": 20309,
+  "by_width": {
+    "1920": {
+      "n": 100,
+      "mean_first_glimpse_visible": 12.0,
+      "mean_steps": 7.45,
+      "mean_explore_glimpses": 1.24,
+      "mean_verify_glimpses": 6.21,
+      "hit_offset_median": 12.330510573924634,
+      "miss_offsets": [
+        35.6,
+        17.6
+      ],
+      "miss_answered_wrong_card": 2
+    },
+    "3840": {
+      "n": 100,
+      "mean_first_glimpse_visible": 12.0,
+      "mean_steps": 9.58,
+      "mean_explore_glimpses": 2.44,
+      "mean_verify_glimpses": 7.14,
+      "hit_offset_median": 11.696992226372881,
+      "miss_offsets": [
+        49.1,
+        43.8,
+        32.7,
+        30.0
+      ],
+      "miss_answered_wrong_card": 4
+    },
+    "7680": {
+      "n": 100,
+      "mean_first_glimpse_visible": 6.31,
+      "mean_steps": 23.03,
+      "mean_explore_glimpses": 16.1,
+      "mean_verify_glimpses": 6.93,
+      "hit_offset_median": 13.133763722547076,
+      "miss_offsets": [
+        4.3,
+        15.7,
+        33.9,
+        31.6
+      ],
+      "miss_answered_wrong_card": 4
+    },
+    "15360": {
+      "n": 100,
+      "mean_first_glimpse_visible": 1.46,
+      "mean_steps": 29.43,
+      "mean_explore_glimpses": 22.11,
+      "mean_verify_glimpses": 7.32,
+      "hit_offset_median": 10.15283501167179,
+      "miss_offsets": [],
+      "miss_answered_wrong_card": 0
+    }
+  },
+  "offset_hits_quantiles": [
+    11.610371959308628,
+    22.95253906954513,
+    37.47565521345139
+  ],
+  "offset_miss_values": [
+    4.3,
+    15.7,
+    17.6,
+    30.0,
+    31.6,
+    32.7,
+    33.9,
+    35.6,
+    43.8,
+    49.1
+  ],
+  "miss_offset_above_hit_p90": 7
+}

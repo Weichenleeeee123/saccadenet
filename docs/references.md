@@ -9,4 +9,6 @@
 | [Mnih et al., NeurIPS 2014](https://proceedings.neurips.cc/paper_files/paper/2014/hash/3e456b31302cf8210edd4029292a40ad-Abstract.html) / [论文PDF](https://proceedings.neurips.cc/paper/2014/file/09c6c3783b4a70054da74f2538ed47c6-Paper.pdf) | *Recurrent Models of Visual Attention*；多分辨率glimpse与局部高分辨率处理是直接前例。论文说明计算可相对输入尺寸受控。本项目只比较采样律、固定金字塔成本拆分和此处的合成E1协议。 | “首次只看局部”或“首次使语义计算与图幅脱钩”。从逐级增大的patch推论其尺度数随覆盖范围对数增长是我们的推断，不是论文直接报告的复杂度定理。 |
 | [LeCun、Cortes、Burges MNIST主页](https://yann.lecun.org/exdb/mnist/index.html) | 官方主页列60,000训练图与10,000测试图，28×28尺寸；本项目train源中再划分train/calibration/development，官方test留给最终评测。 | 画布由MNIST构成就等价于自然图像验证。 |
 
-原附录C其余条目（Koch、Horton/Hoyt、Wald、Blackwell、Treisman/Gelade、Graves、Jaderberg、Jang、Dosovitskiy、Wu/Xie、2026年Cell连接组）尚未逐条核验，当前报告不引用其具体断言。特别是新闻/连接组条目不用于宣称模型的生物学真实性或创新性。
+| [Treisman & Gelade, *Cognitive Psychology* 1980](https://pubmed.ncbi.nlm.nih.gov/7351125/) | *A feature-integration theory of attention*，12(1):97–136，DOI `10.1016/0010-0285(80)90005-5`（2026-09-26核验：PubMed 7351125与ScienceDirect条目）。只作为类比来源：单一特征的目标能被并行检出（"弹出"），而需要组合多个特征的目标要逐个串行查看。本项目用它区分两种情况：候选在低分辨率下就能弹出的任务（亮卡片），以及候选必须靠近看才能发现的任务。 | 把本项目的模型说成FIT的实现或生物学证据；本项目的卡片检测是亮度阈值，不是人类注意的机制。 |
+
+原附录C其余条目（Koch、Horton/Hoyt、Wald、Blackwell、Graves、Jaderberg、Jang、Dosovitskiy、Wu/Xie、2026年Cell连接组）尚未逐条核验，当前报告不引用其具体断言。特别是新闻/连接组条目不用于宣称模型的生物学真实性或创新性。

@@ -20,7 +20,7 @@ import numpy as np
 
 from saccadenet.config import EpisodeConfig
 from saccadenet.data.canvas import _place_centers
-from saccadenet.retina.horizon import detection_horizon
+from saccadenet.retina.horizon import derived_grid, detection_horizon
 
 MATCH = 144.0  # tracker merge radius; a candidate within it is attributed to that card
 EDGES = np.array([0, 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 8000, 12000, 18000], dtype=float)
@@ -47,6 +47,7 @@ def _attribute(xy, centers: np.ndarray) -> int | None:
 
 
 def load_traces(run_dir: Path, method: str = "saccadenet_lite") -> list[dict]:
+    """Latest attempt per key for one method."""
     items = {}
     for path in sorted(run_dir.glob("trace*.jsonl")):
         with path.open(encoding="utf-8") as file:
@@ -95,6 +96,22 @@ def answer_offsets(trace: dict) -> dict:
     }
 
 
+def trace_grid(trace: dict) -> int:
+    method, width, height, _ = trace["key"]
+    return derived_grid(width, height, detection_horizon()[0]) if method == "saccadenet_derived_grid" else 5
+
+
+def glimpse_decomposition(trace: dict) -> dict:
+    """Split glimpses into exploration (at a grid anchor or the start) and verification (elsewhere)."""
+    _, width, height, _ = trace["key"]
+    grid = trace_grid(trace)
+    anchors = {((c + 0.5) * width / grid, (r + 0.5) * height / grid) for c in range(grid) for r in range(grid)} | {(width / 2, height / 2)}
+    fixations = [tuple(step["fixation_xy"]) for step in trace["steps"]]
+    explore = sum(1 for f in fixations if any(abs(f[0] - x) < 1e-6 and abs(f[1] - y) < 1e-6 for x, y in anchors))
+    all_found = next((index + 1 for index, step in enumerate(trace["steps"]) if len(step["candidates"]) >= 12), None)
+    return {"grid": grid, "explore_glimpses": explore, "verify_glimpses": len(fixations) - explore, "step_all_candidates": all_found if all_found else ""}
+
+
 def first_glimpse_visible(trace: dict) -> int:
     _, width, height, seed = trace["key"]
     centers = checked_centers(trace)
@@ -102,12 +119,12 @@ def first_glimpse_visible(trace: dict) -> int:
     return len({card for card in (_attribute(c["xy"], centers) for c in first["candidates"]) if card is not None})
 
 
-def analyze(run_dir: Path, out: Path) -> Path:
-    traces = load_traces(run_dir)
+def analyze(run_dir: Path, out: Path, method: str = "saccadenet_lite") -> Path:
+    traces = load_traces(run_dir, method)
     if not traces:
         raise ValueError("no SaccadeNet traces found")
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    target = out / f"trace-analysis-{run_dir.name}-{stamp}"
+    target = out / f"trace-analysis-{run_dir.name}-{method}-{stamp}"
     target.mkdir(parents=True, exist_ok=False)
 
     events = [event for trace in traces for event in horizon_events(trace)]
@@ -127,6 +144,8 @@ def analyze(run_dir: Path, out: Path) -> Path:
     for trace in traces:
         item = answer_offsets(trace)
         item["first_glimpse_visible"] = first_glimpse_visible(trace)
+        item.update(glimpse_decomposition(trace))
+        item["method"] = trace["key"][0]
         per_episode.append(item)
     with (target / "episodes.csv").open("x", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=tuple(per_episode[0]))
@@ -142,6 +161,8 @@ def analyze(run_dir: Path, out: Path) -> Path:
         summary["by_width"][str(width)] = {
             "n": len(group), "mean_first_glimpse_visible": float(np.mean([i["first_glimpse_visible"] for i in group])),
             "mean_steps": float(np.mean([i["steps"] for i in group])),
+            "mean_explore_glimpses": float(np.mean([i["explore_glimpses"] for i in group])),
+            "mean_verify_glimpses": float(np.mean([i["verify_glimpses"] for i in group])),
             "hit_offset_median": float(np.nanmedian([i["candidate_offset_px"] for i in hits])) if hits else None,
             "miss_offsets": [round(i["candidate_offset_px"], 1) for i in misses],
             "miss_answered_wrong_card": sum(1 - i["answered_card_is_target"] for i in misses),
@@ -174,15 +195,22 @@ def analyze(run_dir: Path, out: Path) -> Path:
     left.set_xlabel("Eccentricity from fixation (px); dotted = canvas half-diagonal", labelpad=14)
     left.set_ylabel("P(discovered at this glimpse)")
     left.set_title("Detection horizon: analytic bands vs measured", fontsize=10)
-    labels = ["1080p", "4K", "8K", "16K"]
+    names = {1920: "1080p", 3840: "4K", 7680: "8K", 15360: "16K", 24576: "24K"}
+    explore = [summary["by_width"][str(w)]["mean_explore_glimpses"] for w in widths]
+    verify = [summary["by_width"][str(w)]["mean_verify_glimpses"] for w in widths]
     first = [summary["by_width"][str(w)]["mean_first_glimpse_visible"] for w in widths]
-    steps = [summary["by_width"][str(w)]["mean_steps"] for w in widths]
     x = np.arange(len(widths))
-    right.bar(x - 0.2, first, width=0.4, color="#83c5be", label="Cards found at glimpse 1 (of 12)")
-    right.bar(x + 0.2, steps, width=0.4, color="#006d77", label="Mean glimpses per episode")
-    right.set_xticks(x, labels[: len(widths)])
-    right.legend(fontsize=8, frameon=False)
-    right.set_title("First-glimpse coverage vs glimpses needed", fontsize=10)
+    right.bar(x, verify, width=0.55, color="#d1495b", label="Verification glimpses (off-grid)")
+    right.bar(x, explore, width=0.55, bottom=verify, color="#006d77", label="Exploration glimpses (start + grid anchors)")
+    right.axhline(6.5, color="#d1495b", linestyle=":", linewidth=1)
+    right.text(-0.45, 7.0, "(K+1)/2 = 6.5", color="#d1495b", fontsize=8, ha="left", va="bottom")
+    for xi, value in zip(x, first):
+        right.text(xi, verify[xi] + explore[xi] + 0.6, f"{value:.1f}/12 seen\nat glimpse 1", ha="center", fontsize=7, color="#555555")
+    right.set_xticks(x, [names.get(w, str(w)) for w in widths])
+    right.set_ylim(0, max(v + e for v, e in zip(verify, explore)) * 1.25)
+    right.set_ylabel("Mean glimpses per episode")
+    right.legend(fontsize=8, frameon=False, loc="upper left")
+    right.set_title("Glimpse budget: verify is flat, explore grows", fontsize=10)
     fig.text(0.07, 0.03, f"Post-hoc descriptive analysis of saved traces; run {run_dir.name}; {len(events)} card-glimpse exposures.", fontsize=7)
     fig.savefig(target / "figure6-horizon.png", dpi=180)
     fig.savefig(target / "figure6-horizon.svg")
@@ -194,8 +222,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=Path("reports/analysis"))
+    parser.add_argument("--method", default="saccadenet_lite")
     args = parser.parse_args()
-    print(analyze(args.run, args.out))
+    print(analyze(args.run, args.out, args.method))
 
 
 if __name__ == "__main__":
