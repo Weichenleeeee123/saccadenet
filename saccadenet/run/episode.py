@@ -24,6 +24,7 @@ class SceneSensor:
     def __init__(self, pyramid: Pyramid, *, fovea_size: int = 96, sectors: int = 128) -> None:
         self._pyramid = pyramid
         self.pyramid_add_count = pyramid.add_count
+        self.pyramid_bytes = sum(level.nbytes for level in pyramid.levels)
         self.fovea_size = fovea_size
         self.sectors = sectors
 
@@ -46,6 +47,7 @@ def run_episode(
     meter = CostMeter()
     pyramid_charge = int(getattr(sensor, "pyramid_add_count", 0))
     meter.record_pyramid_once(pyramid_charge)
+    meter.add_sensing_bytes(int(getattr(sensor, "pyramid_bytes", 0)))
     one_cnn_flops = count_model_flops(network, (1, 3, 96, 96))
     tracker = CandidateTracker(merge_radius=config.candidate_merge_radius)
     fusion = FusionB()
@@ -58,6 +60,7 @@ def run_episode(
     for step in range(config.t_max):
         retina = sensor.observe(current)
         meter.add_sensing(max(0, int(retina.sensing_flops) - pyramid_charge))
+        meter.add_sensing_bytes(int(retina.fovea.nbytes + retina.logpolar.nbytes))
         detections = detect_on_retina(retina, brightness_threshold=config.detector_threshold)
         meter.add_semantic("detector", retina.fovea.size + retina.logpolar.size)
         candidates, reset_ids = tracker.update(detections, step)

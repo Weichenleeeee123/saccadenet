@@ -8,6 +8,7 @@ import torch
 class CostMeter:
     def __init__(self) -> None:
         self.sensing_flops = 0
+        self.sensing_bytes = 0
         self._semantic: dict[str, int] = defaultdict(int)
         self._pyramid_charged = False
 
@@ -22,6 +23,11 @@ class CostMeter:
             raise ValueError("negative sensing cost")
         self.sensing_flops += int(estimated_flops)
 
+    def add_sensing_bytes(self, bytes_read: int) -> None:
+        if bytes_read < 0:
+            raise ValueError("negative sensing bytes")
+        self.sensing_bytes += int(bytes_read)
+
     def add_semantic(self, component: str, estimated_flops: int) -> None:
         if estimated_flops < 0:
             raise ValueError("negative semantic cost")
@@ -30,6 +36,7 @@ class CostMeter:
     def snapshot(self) -> dict[str, int]:
         return {
             "sensing_flops": self.sensing_flops,
+            "sensing_bytes": self.sensing_bytes,
             "semantic_flops": sum(self._semantic.values()),
             **{f"semantic_{key}_flops": value for key, value in self._semantic.items()},
         }
@@ -59,4 +66,3 @@ def count_model_flops(model: torch.nn.Module, input_shape: tuple[int, ...]) -> i
         for hook in hooks:
             hook.remove()
     return result
-

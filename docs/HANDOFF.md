@@ -1,15 +1,17 @@
 # 接手说明
 
-更新时间：2026-09-25（Asia/Taipei）。本次交接点：T01、T03–T05完成；T02预检继续，T06模型训练原型进行中。
+更新时间：2026-09-25（Asia/Taipei）。本次交接点：T01、T03–T05、T10–T11已完成；T06–T09部分验收待补，准备从干净提交运行E1。
 
 ## 现在实际有什么
 
 - 主仓库：`D:\saccadenet`；实施工作树：`D:\saccadenet\.worktrees\implementation`，分支`feat/implementation`。从工作树继续开发，主工作区`main`保留规划。
 - 原始文档：`docs/saccadenet_v0_summary.md`、`docs/saccadenet_v0.1_summary.md`，原样保留；快照提交 `5322323`。
 - 新增规划文档见根目录 README。规划提交可通过 `git log -5 --oneline` 查看，标题为 `docs: add execution plan and handoff tracking`。
-- 已有T01配置/契约与测试、Python3.12虚拟环境；T03–T05代码、单测与开发召回报告。MNIST已下载到忽略目录`data/mnist`，哈希见候选召回报告。尚无训练权重、正式实验或已验证的科研结论。
+- 已有T01配置/契约、T03–T05代码和开发召回报告。T06–T09模型、标定、闭环在提交`d222f1d`中；T10三基线及T11可续跑实验驱动正在验收。MNIST已下载到忽略目录`data/mnist`。**尚无正式E1结果，也没有已验证的科研结论。**
+- v1主权重：`checkpoints/fovea/20260925T145236155331Z-b107b36e/epoch-008.pt`，SHA256 `3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9`；retina标定：`reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json`；两阶段Platt：`reports/calibration/two-stage-platt-20260925T151159460820Z-3d80b18c.json`。权重被Git忽略，跨机交接必须实际复制。
+- 开发32局冒烟首次全部因trace序列化报错，错误保留于`runs/20260925T151457474939Z-d222f1d5-e1-smoke`；修复后同目录第二次attempt 32/32成功。随后新增`sensing_bytes`字段，旧目录schema不可续跑。最终schema另建`runs/20260925T151923188489Z-d222f1d5-e1-smoke`，32/32成功、`summary-2.csv`有理想滑窗成本列。
 - 没有远端；不能认为项目已备份到 GitHub。
-- 已只读核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；D盘剩余约9.7 GiB。尚未测试PyTorch/CUDA或吞吐。用户表示可在需要时提出租算力请求，目前没有租用。
+- 已核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；当前D盘剩余约5.22 GiB。项目venv中PyTorch 2.6.0+cu126已通过GPU小张量测试。16K全分辨率滑窗开发首局推理约6.8秒，画布生成约4.6秒，尚无需租算力。
 
 ## 接手后的第一步
 
@@ -22,7 +24,7 @@ git remote -v
 
 随后进入实施工作树，阅读最新`AGENTS.md`、`docs/PROGRESS.md`、详细计划与实验协议。用户已明确授权持续实施。
 
-H0记录为2026-09-25 22:13 +08；实际截止时间和队员仍未知，按单人56小时相对排期。当前继续T02/S2，先扩真实MNIST验证与开发召回；默认V0-lite、融合B、Level 2 E1。
+H0记录为2026-09-25 22:13 +08；实际截止时间和队员仍未知，按单人56小时相对排期。当前从干净提交运行正式1,520局E1。默认V0-lite、融合B、Level 2 E1。
 
 ## 必须记住的风险
 
@@ -47,4 +49,4 @@ H0记录为2026-09-25 22:13 +08；实际截止时间和队员仍未知，按单�
 - 下一项唯一优先动作、阻塞条件及解除方式。
 - 复现需要的配置、权重清单、数据版本和产物位置。
 
-当前下一项：继续T06训练集管线与中央凹CNN训练，完成S2视力表初测；T02其他spike尚待执行。没有已启动的后台训练作业。T01提交`a8d9e9f`、T03提交`580b976`、T04提交`b0b2eb8`；T05提交以`git log -5 --oneline`核实。工作树里T06的`saccadenet/models/`与`tests/test_fovea.py`尚未提交，属于正在推进的模型任务。
+当前下一项：在实施工作树运行`.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e1.yaml`，记录run_dir与会话，再做T12质量检查。T02的S1玩具策略与S4答辩草稿尚未完成；T06分类完整指标及真实视网膜重建增强、T07曲线与分布诊断尚未完成，不能勾选。查看`git status --short --branch`确认未提交改动；不要把`runs/`已忽略误认成丢失。

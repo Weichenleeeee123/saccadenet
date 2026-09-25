@@ -1,6 +1,6 @@
 # SaccadeNet V0.1 详细执行计划
 
-> **For agentic workers:** 后续获得实施授权后，使用 executing-plans 技能逐项执行；本轮只做计划。步骤使用 `- [ ]` 记录进度。没有明确授权不派发子代理。
+> **For agentic workers:** 用户已在后续回合授权持续实施。步骤使用 `- [ ]`/`- [x]` 记录进度；未要求代理协作，不派发子代理。
 
 **Goal:** 在56小时预算内优先交付可复现的V0-lite、Level 2 E1、三条公平基线、两张核心图、最小回放与可交接报告，并如实说明实验是否支持假设。
 
@@ -8,15 +8,15 @@
 
 **Tech Stack:** 计划采用Python 3.11、PyTorch/torchvision、NumPy、SciPy、Pillow、Matplotlib、PyYAML、pytest；OpenCV仅在连通域性能确有需要时加入。安装版本在T01验证Windows/CUDA兼容后锁定，本轮不安装。成本首选显式算子计数并用一个profile工具交叉核对。
 
-**状态：** 仅规划，所有实施步骤未开始。日期2026-09-25。来源：[V0.1](../../saccadenet_v0.1_summary.md)。配套：[进度](../../PROGRESS.md)、[交接](../../HANDOFF.md)、[实验协议](../../EXPERIMENT_PROTOCOL.md)、[决策](../../DECISIONS.md)。
+**状态：** 实施中，以任务级勾选和进度看板为准。日期2026-09-25。来源：[V0.1](../../saccadenet_v0.1_summary.md)。配套：[进度](../../PROGRESS.md)、[交接](../../HANDOFF.md)、[实验协议](../../EXPERIMENT_PROTOCOL.md)、[决策](../../DECISIONS.md)。
 
 ---
 
 ## 1. 约束与成功的含义
 
 - 永远不删除文件；需要清理时让用户处理。重跑写新目录，不覆盖或销毁失败证据。
-- 用户本轮只要求详细计划。Git与文档已落地；下述代码、命令和任务均为未来实施设计，不代表已实现。
-- 硬件已只读确认：RTX 4070 Laptop / 8188 MiB VRAM，约15.7 GiB RAM，驱动580.88，D盘可用约9.7 GiB；CUDA/PyTorch可用性尚未测试。优先本机，不先租GPU。
+- 用户后续已授权持续实施；计划中的部分任务已经实现，勾选与证据见各任务段落及进度看板。
+- 硬件已确认：RTX 4070 Laptop / 8188 MiB VRAM，约15.7 GiB RAM，驱动580.88；CUDA/PyTorch小张量已通过，16K全分辨率开发探针可运行。D盘余量随产物变化，以交接最新快照为准。优先本机。
 - 人数暂按单人，H0与实际截止时间尚未确认。用户允许需要更多算力时提出租用建议；真正采购需说明测得瓶颈、预算与时间收益。
 - 原方案中的“≥98%”“d′>1”“成本≤4倍”“准确率下降≤3个百分点”“4K–8K崩溃”是待验收目标，不是事实。
 - **工程完成**：程序、实验、证据链可复现；**研究成功**：数据支持预注册假设。两者分开记录。没达到G1/G2仍交真实曲线及原因，不能调协议把结果改成成功。
@@ -233,25 +233,25 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`saccadenet/run/baselines.py`、`tests/test_baselines.py`、`configs/baselines.yaml`、`reports/spikes/baseline_budget.csv`。
 
-- [ ] 用同一个CNN实现全分辨率stride16滑窗，分块建议1024边长起步；halo按实际感受野推导，输出去重，覆盖最后一行/列；不能在全图预先找真值亮卡来减少滑窗量。
-- [ ] 写小图整图/分块一致性测试，包含跨块数字与边缘数字；记录halo重复计算，报告实际成本和理想全卷积解析值，不能混成一个值。
-- [ ] 实现宽1024的一段式抗混叠降采样，再全卷积定位/分类；输出坐标乘回缩放比，无候选记失败。
-- [ ] 实现两阶段：缩图卡片检测→粗查询分数排序→逐个原图96高清crop；校准查询概率越阈值停，否则全部看完选最高；每个读取与判断计费。
-- [ ] 两阶段处理空候选、重复检测、越界crop；不允许用真值命中判定来“找到即停”。三基线输出统一EpisodeLog。
-- [ ] 运行`python -m pytest tests/test_baselines.py -q`，开发集逐级测四档3局以上。16K内存不够先减tile/batch与串行CPU金字塔；仍失败按租算力/降级门禁执行。
-- [ ] 提交`feat(T10): implement all three fair baselines`，补实际吞吐估算和峰值内存。
+- [x] 用同一个CNN实现全分辨率stride16滑窗；halo按96px感受野推导，输出去重，覆盖最后一行/列；不在全图预先找真值亮卡。实际采用48×48输出格分块。
+- [x] 写小图整图/分块一致性测试，包含跨块与边缘窗口；记录halo重复计算，报告实际成本和理想全卷积解析值。见`summary-2.csv`。
+- [x] 实现宽1024的一段式抗混叠降采样，再全卷积定位/分类；输出坐标乘回缩放比。
+- [x] 实现两阶段：缩图卡片检测→粗查询分数排序→逐个原图96高清crop；Platt校准查询概率越阈值停，否则全部看完选最高；每个读取与判断计费。
+- [x] 两阶段处理空候选、连通域重复检测、越界crop；不用真值命中判停。三基线输出统一EpisodeLog。
+- [x] 运行`python -m pytest tests/test_baselines.py -q`，开发集四档各至少3局；16K无OOM。吞吐和内存留痕见`reports/spikes/baseline_feasibility.md`与32局冒烟CSV。
+- [x] 提交T10三基线实现及吞吐报告（与T11同一冻结提交）。
 
 ### T11 — 冻结E1清单与可恢复实验驱动（约1h，依赖T09/T10）
 
 文件：`saccadenet/exp/e1_resolution.py`、`configs/e1.yaml`、`tests/test_experiment_resume.py`、`reports/e1/preregistration.md`。
 
-- [ ] 实现`--dry-run`输出四档×四方法、每条件样本数、总局数1,520、权重/标定hash及预计耗时；不实际启动推理。
-- [ ] 实现协议的manifest/config/seeds/episodes/trace/errors产物与唯一键，CSV每局及时flush；重试另记attempt，不覆盖失败。
-- [ ] 写中断恢复测试：跑两个种子后中断，再`--resume <run_dir>`不得重复成功行；配置/权重hash改变必须拒绝混跑；截断JSONL末行应报告并在新日志段续写，不删除原文件。
-- [ ] 固定原始test digit列表、100个种子与16K全分辨率20种子；登记s_min/W_c、停机阈值、采样/检测参数和成本口径。
-- [ ] 运行`python -m pytest tests/test_experiment_resume.py -q`以及`python -m saccadenet.exp.e1_resolution --config configs/e1.yaml --dry-run`；预期无缺失条件、无未指定模型。
-- [ ] 完成开发集smoke配置（每档2局×4方法）并检查32局全有记录；失败只修实现或协议并重新冻结，不接触测试集调参。
-- [ ] 提交`feat(T11): freeze resumable E1 protocol`；正式运行使用此提交或后续明确修复提交，保存dirty状态，最终结果应来自干净工作树。
+- [x] 实现`--dry-run`输出四档×四方法、各条件样本数、总局数1,520、权重/标定hash；耗时估算见T10可行性报告。不实际启动推理。
+- [x] 实现协议的manifest/config/seeds/episodes/trace/errors产物与唯一键，CSV每局及时flush；重试另记attempt，不覆盖失败。
+- [x] 写中断恢复测试；`--resume <run_dir>`不重复成功行，配置/权重hash变更拒绝；截断JSONL留存并新建日志段。实际首轮32局序列化失败留痕，第二次attempt续跑32/32成功。
+- [x] 固定test种子30,000–30,099及16K全分辨率前20个；生成时保存原始digit IDs；s_min/W_c见D20，阈值/采样/检测与成本口径见配置及D17/D22。
+- [x] 运行`python -m pytest tests/test_experiment_resume.py -q`和`python -m saccadenet.exp.e1_resolution --config configs/e1.yaml --dry-run`；1,520局且四方法四档齐。
+- [x] 完成开发集每档2局×4方法32局；最终schema全部成功，旧失败尝试仍保留在另一run目录。
+- [x] 提交冻结的T11协议；正式运行从此提交启动，manifest记录Git SHA/dirty。
 
 ### T12 — 正式E1运行与质量检查（约0.5h设置+实测机器时间，依赖T11）
 

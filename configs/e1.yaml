@@ -1,0 +1,14 @@
+name: e1_resolution
+checkpoint: checkpoints/fovea/20260925T145236155331Z-b107b36e/epoch-008.pt
+retina_fit: reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json
+two_stage_fit: reports/calibration/two-stage-platt-20260925T151159460820Z-3d80b18c.json
+methods: [saccadenet_lite, full_res_sliding, downsample_1stage, two_stage]
+resolutions: [[1920, 1080], [3840, 2160], [7680, 4320], [15360, 8640]]
+test_seed_start: 30000
+test_seed_count: 100
+full_16k_count: 20
+development_seed_start: 20050
+development_smoke_count: 2
+tile_outputs: 48
+two_stage_threshold: 0.95
+match_radius: 48
