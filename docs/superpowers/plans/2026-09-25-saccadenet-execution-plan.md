@@ -163,13 +163,13 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`saccadenet/retina/pyramid.py`、`sampler.py`、`reconstruct.py`、`tests/test_retina.py`、`tests/test_sensor_boundary.py`。
 
-- [ ] 写环数测试：四档78/93/107/121；总采样点19,200/21,120/22,912/24,704。本轮已用公式复算，实施测试还需核对张量尺寸。
-- [ ] 构建2×2区域平均金字塔，直到短边<64；明确奇数尺寸的pad/mask，逐层统计加法/除法。一次只保留当前画布所需数据，避免无谓float32复制。
-- [ ] 实现r_j=48exp(j·2π/128)，j范围与最外覆盖边界统一；l_j=clip(round(log2(s_j)))。双线性选层采样，角度首尾连续，画布外mask无效。
-- [ ] 中央凹96×96与外周以共享几何坐标输出；中心/四角/边界注视均可运行。常量图采样保持常量，高频棋盘经过粗层应趋近均值，避免warpPolar假抗混叠。
-- [ ] 候选视图仅插值RetinaOut样本；中央凹覆盖区域优先用中央凹观测，外周反投影到96×96，空洞保留mask，不读取原图“补清晰度”。
-- [ ] 验证重建在中心等于已采集中央凹、越界mask正确、无有效覆盖时拒绝打分；签名与对象引用测试禁止ret持有原图/金字塔。
-- [ ] 运行`python -m pytest tests/test_retina.py tests/test_sensor_boundary.py -q`，保存采样/重建对照PNG到spike目录，提交`feat(T04): implement bounded retina observation`。
+- [x] 写环数测试：修正离散端点后四档79/94/108/122；总采样点19,328/21,248/23,040/24,832。与源表差一环，见D18。
+- [x] 构建2×2区域平均金字塔，直到短边<64；奇数边界用分数区域平均。加法次数为解析估计，非精确指令计数，见D19；一次只保留当前画布所需数据。
+- [x] 实现r_j=48exp(j·2π/128)，j范围与最外覆盖边界统一；l_j=clip(round(log2(s_j)))。双线性选层采样，角度首尾连续，画布外mask无效。
+- [x] 中央凹96×96与外周以共享几何坐标输出；中心/四角/边界注视均可运行。常量图采样保持常量，高频棋盘经过粗层应趋近均值，避免warpPolar假抗混叠。
+- [x] 候选视图仅插值RetinaOut样本；中央凹覆盖区域优先用中央凹观测，外周反投影到96×96，空洞保留mask，不读取原图“补清晰度”。
+- [x] 验证重建在中心等于已采集中央凹、越界mask正确；无有效覆盖返回全假mask由下游拒绝打分。签名与对象引用测试禁止ret持有原图/金字塔。
+- [x] 运行`python -m pytest tests/test_retina.py tests/test_sensor_boundary.py -q`，保存采样/重建对照PNG到spike目录，提交`feat(T04): implement bounded retina observation`。
 
 ### T05 — Level 2候选发现与稳定身份（约1h，依赖T04）
 
