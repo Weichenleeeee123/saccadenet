@@ -257,23 +257,23 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`runs/<run_id>/`、`reports/e1/manifest.json`、`episodes.csv`、`summary.csv`、`docs/PROGRESS.md`。
 
-- [ ] 运行`python -m saccadenet.exp.e1_resolution --config configs/e1.yaml`，先确保所有分辨率/方法都有记录，再扩到目标样本；运行顺序预先写清单。
-- [ ] 每阶段检查n、缺失/重复键、NaN、成本单位、目标召回、OOM、阈值与超时分布；故障不从最终分母消失。
-- [ ] 若需重启，使用`--resume <真实run_dir>`，把会话/进程、run_dir、命令和已完成数写入HANDOFF。禁止只说“实验在跑”而不留位置。
-- [ ] 计算Wilson准确率区间、配对bootstrap差/比值；同时报告完成率，图4成本需能看出失败是否导致少算。
-- [ ] 核对G1/G2的点估计、区间和适用条件，给出“支持/不支持/证据不足”；16K基线20局在图中标n=20。
-- [ ] 提交`data(T12): record measured E1 results and provenance`，仅加入小型摘要/清单/必要逐局CSV；原始大trace与权重不进Git。
+- [x] 运行`python -m saccadenet.exp.e1_resolution --config configs/e1.yaml`，先确保所有分辨率/方法都有记录，再扩到目标样本；运行顺序预先写清单。实际run：`runs/20260925T152349319841Z-a6a00495-e1-final`，1,520/1,520。
+- [x] 每阶段检查n、缺失/重复键、NaN、成本单位、目标召回、OOM、阈值与超时分布；故障不从最终分母消失。审计与抽核见`reports/e1/qa.md`。
+- [x] 若需重启，使用`--resume <真实run_dir>`，把会话/进程、run_dir、命令和已完成数写入HANDOFF。禁止只说“实验在跑”而不留位置。本次未发生重启，无需resume。
+- [x] 计算Wilson准确率区间、配对bootstrap差/比值；同时报告完成率，图4成本需能看出失败是否导致少算。见analysis JSON与summary.csv（completed_n=planned_n）。
+- [x] 核对G1/G2的点估计、区间和适用条件，给出“支持/不支持/证据不足”；16K基线20局在图中标n=20。判定见`docs/report.md`。
+- [x] 提交`data(T12): record measured E1 results and provenance`，仅加入小型摘要/清单/必要逐局CSV；原始大trace与权重不进Git。提交标题`data(T12): audit E1 ledger, paired contrasts and QA crosscheck`。
 
 ### T13 — 图4/图5和数据自检（约1h，依赖T12；可先用开发结果验证画图）
 
 文件：`saccadenet/viz/figures.py`、`tests/test_result_schema.py`、`reports/e1/fig4_cost.png`、`fig5_accuracy.png`、`cost_breakdown.csv`。
 
-- [ ] 图表只从summary/episodes读值，不在绘图脚本手填结果；schema要求方法、分辨率、n、估计类型、均值/区间、单位齐全。
-- [ ] 图4双对数画面宽度vs语义FLOPs，附感知/其他ops/总浮点运算/延迟表；解析外推使用不同线型，不能冒充实测点。
-- [ ] 图5准确率与95%区间，随机猜测1/12仅在固定K任务下作为参考；失败计入准确率。缺条件显式标缺，不能插值补成数据。
-- [ ] 按相同seed核查至少5条原始episode→summary→图点；人工查看标签、图例、字体、裁切、单位、样本数和来源脚注。
-- [ ] 运行`python -m pytest tests/test_result_schema.py -q`和`python -m saccadenet.viz.figures --run <真实run_dir> --out reports/e1`；图4/5必须同时含四方法和四档，降级例外明确列出。
-- [ ] 提交`viz(T13): render source-backed resolution results`；开发图如已生成保留原位置，以不同文件名区分最终图。
+- [x] 图表只从summary/episodes读值，不在绘图脚本手填结果；schema要求方法、分辨率、n、估计类型、均值/区间、单位齐全。
+- [x] 图4双对数画面宽度vs语义FLOPs，附感知/其他ops/总浮点运算/延迟表；解析外推使用不同线型，不能冒充实测点。感知/字节/总量/延迟见同目录plot-data.csv。
+- [x] 图5准确率与95%区间，随机猜测1/12仅在固定K任务下作为参考；失败计入准确率。缺条件显式标缺，不能插值补成数据。
+- [x] 按相同seed核查至少5条原始episode→summary→图点；人工查看标签、图例、字体、裁切、单位、样本数和来源脚注。5组汇总与5条逐局抽核见`reports/e1/qa.md`；图已人工目检。
+- [x] 运行`python -m pytest tests/test_result_schema.py -q`和`python -m saccadenet.viz.figures --run <真实run_dir> --out reports/e1`；图4/5必须同时含四方法和四档，降级例外明确列出。正式图目录`reports/e1/…-20260925T153721798894Z/`。
+- [x] 提交`viz(T13): render source-backed resolution results`；开发图如已生成保留原位置，以不同文件名区分最终图。首次失败出图目录保留。
 
 ### T14 — 最小离线回放（约1h，依赖T09/T12，H46前完成）
 
