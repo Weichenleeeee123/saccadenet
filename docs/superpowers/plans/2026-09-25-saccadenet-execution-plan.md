@@ -152,12 +152,12 @@ Level 1单独入口接收公开候选坐标，不在Level 2函数中加可选真
 
 文件：`saccadenet/data/canvas.py`、`saccadenet/data/splits.py`、`tests/test_canvas.py`、`configs/smoke.yaml`。
 
-- [ ] 写测试：同seed逐像素一致；恰1个query；K张卡片在界内且中心距≥288；train/cal/dev/test源数字ID集合不交叉。
-- [ ] 实现多尺度1/f近似背景、192卡片、48数字±4抖动，保留K/c/cards_on/contrast参数；16K只逐张生成，uint8为存储格式。
-- [ ] 真值作为独立`SceneTruth`返回；不把目标颜色/索引编码进预测输入；背景、布局、数字各自使用确定性随机流。
-- [ ] 设置最大布局尝试次数10,000；不满足约束明确报错。支持低分辨率背景生成+平铺细噪声，并把生成算法版本写清单。
-- [ ] 运行`python -m pytest tests/test_canvas.py -q`；另运行一次四档生成benchmark，记录16K目标<10秒是否达标及峰值内存，不在CI硬编码机器速度。
-- [ ] 提交`feat(T03): add reproducible canvas generation`与小型参数/时间报告。
+- [x] 写测试：同seed逐像素一致；恰1个query；K张卡片在界内且中心距≥288；train/cal/dev/test源数字ID集合不交叉。train/test为独立来源，数值索引允许重叠。
+- [x] 实现多尺度1/f近似背景、192卡片、48数字±4抖动，保留K/c/cards_on/contrast参数；16K只逐张生成，uint8为存储格式。
+- [x] 真值作为独立`SceneTruth`返回；不把目标颜色/索引编码进预测输入；背景、布局、数字各自使用确定性随机流。
+- [x] 设置最大布局尝试次数10,000；不满足约束明确报错。支持低分辨率背景生成+平铺细噪声，并把生成算法版本写清单。
+- [x] 运行`python -m pytest tests/test_canvas.py -q`；另运行一次四档生成benchmark，记录16K目标<10秒是否达标及峰值内存，不在CI硬编码机器速度。
+- [x] 提交`feat(T03): add reproducible canvas generation`与小型参数/时间报告。
 
 ### T04 — 金字塔、抗混叠视网膜与反投影（约2h，依赖T03）
 
