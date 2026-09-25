@@ -13,4 +13,6 @@ card_min_distance: 288
 cards_on: true
 color_similarity: 0.0
 background_contrast: 0.3
-
+detector_threshold: 195.0
+candidate_merge_radius: 144.0
+exploration_grid: 5

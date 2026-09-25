@@ -11,6 +11,9 @@ from saccadenet.config import EpisodeConfig, config_hash, config_from_mapping
         ({"tau": 0}, "tau"),
         ({"tau": 1}, "tau"),
         ({"t_max": 0}, "t_max"),
+        ({"detector_threshold": 256}, "detector_threshold"),
+        ({"candidate_merge_radius": 0}, "candidate_merge_radius"),
+        ({"exploration_grid": 0}, "exploration_grid"),
     ],
 )
 def test_invalid_episode_config_names_bad_field(overrides, field):

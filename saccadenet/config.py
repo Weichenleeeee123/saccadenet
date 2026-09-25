@@ -26,6 +26,9 @@ class EpisodeConfig:
     cards_on: bool = True
     color_similarity: float = 0.0
     background_contrast: float = 0.3
+    detector_threshold: float = 195.0
+    candidate_merge_radius: float = 144.0
+    exploration_grid: int = 5
 
     def __post_init__(self) -> None:
         if (self.width, self.height) not in RESOLUTIONS:
@@ -52,6 +55,12 @@ class EpisodeConfig:
             raise ValueError("color_similarity must lie in [0, 1]")
         if not 0 <= self.background_contrast <= 1:
             raise ValueError("background_contrast must lie in [0, 1]")
+        if not 0 <= self.detector_threshold <= 255:
+            raise ValueError("detector_threshold must lie in [0, 255]")
+        if self.candidate_merge_radius <= 0:
+            raise ValueError("candidate_merge_radius must be positive")
+        if self.exploration_grid <= 0:
+            raise ValueError("exploration_grid must be positive")
 
 
 def config_from_mapping(values: Mapping[str, Any]) -> EpisodeConfig:
@@ -65,4 +74,3 @@ def config_from_mapping(values: Mapping[str, Any]) -> EpisodeConfig:
 def config_hash(config: EpisodeConfig) -> str:
     payload = json.dumps(asdict(config), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-

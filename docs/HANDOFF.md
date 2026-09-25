@@ -1,13 +1,13 @@
 # 接手说明
 
-更新时间：2026-09-25（Asia/Taipei）。本次交接点：T01完成，T02及T03–T05原型推进中。
+更新时间：2026-09-25（Asia/Taipei）。本次交接点：T01、T03–T05完成；T02预检继续，T06模型训练原型进行中。
 
 ## 现在实际有什么
 
 - 主仓库：`D:\saccadenet`；实施工作树：`D:\saccadenet\.worktrees\implementation`，分支`feat/implementation`。从工作树继续开发，主工作区`main`保留规划。
 - 原始文档：`docs/saccadenet_v0_summary.md`、`docs/saccadenet_v0.1_summary.md`，原样保留；快照提交 `5322323`。
 - 新增规划文档见根目录 README。规划提交可通过 `git log -5 --oneline` 查看，标题为 `docs: add execution plan and handoff tracking`。
-- 已有T01配置/契约与测试、Python3.12虚拟环境；T03–T05原型正在开发。尚无下载的MNIST、训练权重、正式实验或已验证的科研结论。
+- 已有T01配置/契约与测试、Python3.12虚拟环境；T03–T05代码、单测与开发召回报告。MNIST已下载到忽略目录`data/mnist`，哈希见候选召回报告。尚无训练权重、正式实验或已验证的科研结论。
 - 没有远端；不能认为项目已备份到 GitHub。
 - 已只读核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；D盘剩余约9.7 GiB。尚未测试PyTorch/CUDA或吞吐。用户表示可在需要时提出租算力请求，目前没有租用。
 
@@ -47,4 +47,4 @@ H0记录为2026-09-25 22:13 +08；实际截止时间和队员仍未知，按单�
 - 下一项唯一优先动作、阻塞条件及解除方式。
 - 复现需要的配置、权重清单、数据版本和产物位置。
 
-当前下一项：核查T03–T05现有测试与原型，完成T01提交；随后获取MNIST（记录来源和校验值）并推进T06/S2。没有已启动的后台训练作业；GPU wheel安装已完成，临时文件由pip自行管理，没有主动清理文件。
+当前下一项：继续T06训练集管线与中央凹CNN训练，完成S2视力表初测；T02其他spike尚待执行。没有已启动的后台训练作业。T01提交`a8d9e9f`、T03提交`580b976`、T04提交`b0b2eb8`；T05提交以`git log -5 --oneline`核实。工作树里T06的`saccadenet/models/`与`tests/test_fovea.py`尚未提交，属于正在推进的模型任务。
