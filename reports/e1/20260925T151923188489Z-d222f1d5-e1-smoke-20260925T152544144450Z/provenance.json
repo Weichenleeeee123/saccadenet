@@ -1,0 +1,8 @@
+{
+  "source_run": "runs\\20260925T151923188489Z-d222f1d5-e1-smoke",
+  "git_head": "d222f1d54fc7aa3035c8fd257ae609b7d7e635f7",
+  "config_sha256": "ea7baa9b8ada563dbb8db7da9b32eff7c43eeb88ef07b36a97b0bf75e4f632f0",
+  "checkpoint_sha256": "3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9",
+  "bootstrap_seed": 40000,
+  "bootstrap_replicates": 2000
+}
