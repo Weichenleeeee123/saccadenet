@@ -9,3 +9,4 @@ matplotlib==3.10.0
 PyYAML==6.0.2
 pytest==8.4.2
 opencv-python-headless==4.11.0.86
+psutil==5.9.5
