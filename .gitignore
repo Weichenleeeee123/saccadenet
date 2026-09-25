@@ -1,4 +1,5 @@
 # Local environments and tool caches
+.worktrees/
 .venv/
 __pycache__/
 *.py[cod]
