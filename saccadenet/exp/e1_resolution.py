@@ -118,13 +118,17 @@ def run_job(
     retina_calibrator: GaussianCalibrator, two_stage_calibrator: PlattCalibration,
     *, device: torch.device, tile_outputs: int, two_stage_threshold: float,
 ):
-    if method in ("saccadenet_lite", "saccadenet_derived_grid"):
+    if method in ("saccadenet_lite", "saccadenet_derived_grid", "saccadenet_confirm_unscored"):
         if method == "saccadenet_derived_grid":
             # D27: grid from the analytic horizon, keeping the frozen 15-glimpse verification margin (40 - 5*5).
             grid = derived_grid(config.width, config.height, detection_horizon(config.card_size, config.sectors)[0])
             config = replace(config, exploration_grid=grid, t_max=grid * grid + 15)
         sensor = SceneSensor(build_pyramid(image), fovea_size=config.fovea_size, sectors=config.sectors)
-        return run_episode(sensor, EpisodeInput(config.query, config.width, config.height, config.k), config, retina_calibrator, network, device=device)
+        return run_episode(
+            sensor, EpisodeInput(config.query, config.width, config.height, config.k),
+            config, retina_calibrator, network, device=device,
+            require_all_scored=method == "saccadenet_confirm_unscored",
+        )
     if method == "full_res_sliding":
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
     if method == "downsample_1stage":

@@ -1,5 +1,6 @@
 import numpy as np
 
+import saccadenet.bayes.policy as policy
 from saccadenet.bayes.fusion import FusionB
 from saccadenet.bayes.policy import choose_fixation, exploration_anchor, fixation_candidates, should_stop
 from saccadenet.contracts import Candidate
@@ -47,3 +48,26 @@ def test_single_discovered_candidate_cannot_force_threshold_stop():
     assert not should_stop(np.asarray((1.0,)), discovered=1, expected_k=12, tau=0.95, has_evidence=True)
     assert not should_stop(np.asarray((0.97, 0.03)), discovered=12, expected_k=12, tau=0.95, has_evidence=False)
     assert should_stop(np.asarray((0.96, 0.04)), discovered=12, expected_k=12, tau=0.95, has_evidence=True)
+
+
+def test_confirmation_requires_every_discovered_candidate_to_have_evidence():
+    posterior = np.asarray((0.99, 0.01))
+    assert not should_stop(
+        posterior, discovered=2, expected_k=2, tau=0.95,
+        has_evidence=True, require_all_scored=True, all_scored=False,
+    )
+    assert should_stop(
+        posterior, discovered=2, expected_k=2, tau=0.95,
+        has_evidence=True, require_all_scored=True, all_scored=True,
+    )
+
+
+def test_confirmation_targets_nearest_unscored_candidate():
+    candidates = [_candidate(0, 10, 10), _candidate(1, 80, 80), _candidate(2, 25, 25)]
+    fusion = FusionB()
+    fusion.update(0, 1.0, 2.0)
+    assert policy.confirmation_fixation(candidates, fusion, current=(0, 0)) == (25, 25)
+    fusion.update(2, 0.0, 2.0)
+    assert policy.confirmation_fixation(candidates, fusion, current=(0, 0)) == (80, 80)
+    fusion.update(1, 0.0, 2.0)
+    assert policy.confirmation_fixation(candidates, fusion, current=(0, 0)) is None

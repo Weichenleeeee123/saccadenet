@@ -79,6 +79,15 @@ def exploration_anchor(
     return min(remaining, key=lambda xy: (math.dist(current, xy), xy[0], xy[1])) if remaining else None
 
 
+def confirmation_fixation(
+    candidates: list[Candidate], fusion: FusionB, *, current: tuple[float, float]
+) -> tuple[float, float] | None:
+    unscored = [candidate for candidate in candidates if fusion.quality(candidate.stable_id) <= 0]
+    if not unscored:
+        return None
+    return min(unscored, key=lambda candidate: (math.dist(current, candidate.xy), candidate.xy)).xy
+
+
 def should_stop(
     posterior: np.ndarray,
     *,
@@ -86,5 +95,10 @@ def should_stop(
     expected_k: int,
     tau: float,
     has_evidence: bool,
+    require_all_scored: bool = False,
+    all_scored: bool = False,
 ) -> bool:
-    return bool(has_evidence and discovered >= expected_k and posterior.size and np.max(posterior) >= tau)
+    return bool(
+        has_evidence and discovered >= expected_k and posterior.size
+        and (not require_all_scored or all_scored) and np.max(posterior) >= tau
+    )
