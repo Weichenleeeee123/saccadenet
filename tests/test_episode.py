@@ -42,6 +42,12 @@ def test_one_found_candidate_is_scored_and_stops_with_recorded_cost():
     assert episode.costs["sensing_flops"] > 0
     assert episode.costs["semantic_flops"] > 0
     assert len(episode.trace) == 1
+    observation = episode.trace[0]["observations"][0]
+    assert observation["candidate_id"] == episode.trace[0]["candidates"][0]["id"]
+    assert 0 <= observation["valid_fraction"] <= 1
+    assert np.isfinite(observation["raw_score"])
+    assert np.isfinite(observation["normalized_score"])
+    assert np.linalg.norm(np.asarray(observation["candidate_xy"]) - (960, 540)) <= 48
 
 
 def test_evaluation_keeps_truth_outside_search_loop():

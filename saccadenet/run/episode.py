@@ -72,6 +72,7 @@ def run_episode(
         for candidate_id in reset_ids:
             fusion.reset(candidate_id)
         views, observation_meta = [], []
+        observations: list[dict] = []
         for candidate in candidates:
             eccentricity = math.dist(current, candidate.xy)
             dprime = float(calibrator.dprime(eccentricity))
@@ -79,18 +80,28 @@ def run_episode(
                 continue
             view, valid = candidate_view(retina, candidate.xy)
             meter.add_semantic("reconstruction", view.size * 8)
-            if valid.mean() < 0.5:
+            valid_fraction = float(valid.mean())
+            if valid_fraction < 0.5:
                 continue
             views.append(view)
-            observation_meta.append((candidate.stable_id, eccentricity, dprime))
+            observation_meta.append((candidate.stable_id, candidate.xy, eccentricity, dprime, valid_fraction))
         if views:
             pixels = np.stack(views)
             batch = torch.from_numpy(pixels).permute(0, 3, 1, 2).to(device=device, dtype=torch.float32).div_(255)
             with torch.inference_mode():
                 scores = score_query_logits(network(batch), episode_input.query).cpu().numpy()
             meter.add_semantic("cnn", one_cnn_flops * len(views))
-            for (candidate_id, eccentricity, dprime), score in zip(observation_meta, scores):
+            for (candidate_id, candidate_xy, eccentricity, dprime, valid_fraction), score in zip(observation_meta, scores):
                 normalized = calibrator.normalize(float(score), eccentricity)
+                observations.append({
+                    "candidate_id": candidate_id,
+                    "candidate_xy": candidate_xy,
+                    "eccentricity": eccentricity,
+                    "dprime": dprime,
+                    "valid_fraction": valid_fraction,
+                    "raw_score": float(score),
+                    "normalized_score": float(normalized) if normalized is not None else None,
+                })
                 if normalized is not None:
                     fusion.update(candidate_id, normalized, dprime)
         candidate_ids = [candidate.stable_id for candidate in candidates]
@@ -102,6 +113,8 @@ def run_episode(
                 "fixation_xy": current,
                 "candidates": [{"id": item.stable_id, "xy": item.xy} for item in candidates],
                 "posterior": posterior.tolist(),
+                "reset_ids": sorted(reset_ids),
+                "observations": observations,
                 "costs": meter.snapshot(),
             }
         )
