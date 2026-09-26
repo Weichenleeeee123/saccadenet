@@ -1,13 +1,20 @@
 # 接手说明
 
-## 最新交接（2026-09-26 14:10，Claude，额度将尽）
+## 最新交接（2026-09-26 14:50，Claude）
+
+- D49已实施并验收，结果记为D50（代码`cbc5be3`）：采样按金字塔层合并remap，检测用外接框取像素、布尔散点去重，标定查表用bisect。等价测试见`tests/test_d49_equivalence.py`；trace比对和留出比对脚本为`scripts/d49_trace_dump.py`、`scripts/d49_compare.py`（运行时需`PYTHONPATH=.`）。
+- 新留出重跑：`runs/20260926T061539089248Z-cbc5be32-recovery_b04_holdout-final`，决策与D48逐局相同；时间比1.84/2.31/2.82/2.52。记录在`reports/recovery/d49-perf-20260926.md`，报告和提纲已同步。
+- 108项测试通过。没有运行中的进程。磁盘（14:50）：C约0.8 GB，D约3.9 GB。
+- 下一步：与用户讨论视频追踪；分支`codex/audit-v02`领先`main`，是否合并、推送等用户决定。
+
+## 上一次交接（2026-09-26 14:10，Claude，额度将尽）
 
 - 本轮已完成：图0结构图（`reports/figures/architecture-20260926T053411952920Z/`，并已写入报告）；报告新增“什么时候注视是最优的（解析分析）”一节，路演第8页已同步。
 - 进行中：工程优化，已登记为D49，代码**还没改**。剖析脚本在`.tmp/profile_episode.py`（运行时需`PYTHONPATH=.`）。实施顺序和验收标准见D49：先写等价测试，再改采样、检测、`_index`，逐局比对trace一致后，再在D48的画布上重测时间。
 - 之后：用户想讨论视频追踪，即打破“目标位置无先验”这条前提的场景。
 - 分支`codex/audit-v02`在本提交之后领先`main`，需要时再合并、推送。
 
-## 上一次交接（2026-09-26 13:45，Claude接续Codex）
+## 更早交接（2026-09-26 13:45，Claude接续Codex）
 
 - **位置**：2026-09-26 13:55，用户要求合并并推送：`codex/audit-v02`（到`00afa54`为止）已通过本次合并提交并入`main`，并推送到`origin/main`（GitHub `Weichenleeeee123/saccadenet`）。主工作区`D:\saccadenet`现为`main`；实施工作树`D:\saccadenet\.worktrees\implementation`仍在`codex/audit-v02`，内容与`main`一致。本地标签`v0.1-demo`、`v0.2-analysis`以及两个开发分支都没有推送。
 - **做了什么**：Codex在审计A01之后完成了B01–B04（计时修正、强两阶段、失败诊断、定位修复、确认规则负结果、路由和概览宽度对照），并冻结了新留出评估D47；在第864/1200局时其额度耗尽，进程终止。Claude在同一commit、干净工作树上续跑补齐到1200/1200，写了`saccadenet/exp/analyze_holdout.py`，记录D48，更新报告（新增“修复与新留出评估”一节，改正A01指出的旧表述）和路演提纲，勾选了复核计划B04。
