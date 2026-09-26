@@ -201,9 +201,10 @@ def run_two_stage(
     threshold: float = 0.95,
     probability_calibration: PlattCalibration | None = None,
     coarse_ranking: bool = True,
+    overview_width: int = 1024,
 ) -> EpisodeLog:
     started = time.perf_counter()
-    small, scale_x, scale_y, resize_flops = _downsample(image)
+    small, scale_x, scale_y, resize_flops = _downsample(image, width=overview_width)
     coarse = _coarse_card_centers(small)
     meter = CostMeter()
     meter.add_sensing(resize_flops)

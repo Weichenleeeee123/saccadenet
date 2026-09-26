@@ -8,7 +8,7 @@ import torch
 
 from saccadenet.bayes.calibrate import score_query_logits
 from saccadenet.bayes.fusion import FusionB
-from saccadenet.bayes.policy import choose_fixation, exploration_anchor, fixation_candidates, should_stop
+from saccadenet.bayes.policy import choose_fixation, confirmation_fixation, exploration_anchor, fixation_candidates, should_stop
 from saccadenet.config import EpisodeConfig
 from saccadenet.contracts import EpisodeInput, EpisodeLog, Sensor
 from saccadenet.cost.accounting import CostMeter, count_fovea_flops, count_model_flops
@@ -41,6 +41,9 @@ def run_episode(
     network: torch.nn.Module,
     *,
     device: torch.device,
+    require_all_scored: bool = False,
+    strategy: str = "gain",
+    policy_seed: int = 0,
 ) -> EpisodeLog:
     if (episode_input.width, episode_input.height, episode_input.expected_k) != (config.width, config.height, config.k):
         raise ValueError("episode input and configuration disagree")
@@ -56,6 +59,7 @@ def run_episode(
     )
     tracker = CandidateTracker(merge_radius=config.candidate_merge_radius)
     fusion = FusionB()
+    policy_rng = np.random.default_rng(policy_seed)
     network.eval()
     current = (config.width / 2, config.height / 2)
     visited_anchors = {current}
@@ -105,6 +109,7 @@ def run_episode(
                 if normalized is not None:
                     fusion.update(candidate_id, normalized, dprime)
         candidate_ids = [candidate.stable_id for candidate in candidates]
+        unscored_count = sum(fusion.quality(candidate_id) <= 0 for candidate_id in candidate_ids)
         posterior = fusion.posterior(candidate_ids)
         meter.add_semantic("belief", max(1, len(candidates) * 8))
         trace.append(
@@ -115,6 +120,7 @@ def run_episode(
                 "posterior": posterior.tolist(),
                 "reset_ids": sorted(reset_ids),
                 "observations": observations,
+                "unscored_count": unscored_count,
                 "costs": meter.snapshot(),
             }
         )
@@ -124,15 +130,22 @@ def run_episode(
             expected_k=episode_input.expected_k,
             tau=config.tau,
             has_evidence=any(fusion.quality(candidate_id) > 0 for candidate_id in candidate_ids),
+            require_all_scored=require_all_scored,
+            all_scored=unscored_count == 0,
         ):
             reason = "threshold"
             break
         if len(candidates) >= episode_input.expected_k:
-            omega = fixation_candidates(candidates, e_half=96, canvas_shape=(config.height, config.width))
-            next_fixation = choose_fixation(
-                posterior, candidates, fusion, omega, current=current, dprime=calibrator.dprime
-            )
-            meter.add_semantic("routing", len(candidates) * max(1, len(omega)) * 10)
+            next_fixation = confirmation_fixation(candidates, fusion, current=current) if require_all_scored else None
+            if next_fixation is None:
+                omega = fixation_candidates(candidates, e_half=96, canvas_shape=(config.height, config.width))
+                next_fixation = choose_fixation(
+                    posterior, candidates, fusion, omega, current=current, dprime=calibrator.dprime,
+                    strategy=strategy, step=step, rng=policy_rng,
+                )
+                meter.add_semantic("routing", len(candidates) * max(1, len(omega)) * 10)
+            else:
+                meter.add_semantic("routing", len(candidates))
         else:
             next_fixation = None
         if next_fixation is None:

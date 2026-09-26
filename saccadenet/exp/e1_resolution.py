@@ -72,6 +72,11 @@ def balanced_method_order(methods: list[str], seed: int) -> list[str]:
     return methods[offset:] + methods[:offset]
 
 
+def optimized_overview_width(canvas_width: int) -> int:
+    """Development-selected, frozen overview widths for the new holdout."""
+    return {3840: 192, 7680: 512}.get(canvas_width, 1024)
+
+
 def _wilson(hits: int, trials: int) -> tuple[float, float]:
     if trials == 0:
         return float("nan"), float("nan")
@@ -116,21 +121,41 @@ def write_summary(run_dir: Path, jobs: list[tuple[str, int, int, int]]) -> Path:
 def run_job(
     method: str, image: np.ndarray, config: EpisodeConfig, network: FoveaNet,
     retina_calibrator: GaussianCalibrator, two_stage_calibrator: PlattCalibration,
-    *, device: torch.device, tile_outputs: int, two_stage_threshold: float,
+    *, device: torch.device, tile_outputs: int, two_stage_threshold: float, policy_seed: int = 0,
 ):
-    if method in ("saccadenet_lite", "saccadenet_derived_grid"):
+    if method in (
+        "saccadenet_lite", "saccadenet_derived_grid", "saccadenet_confirm_unscored",
+        "saccadenet_map", "saccadenet_fixed", "saccadenet_random",
+    ):
         if method == "saccadenet_derived_grid":
             # D27: grid from the analytic horizon, keeping the frozen 15-glimpse verification margin (40 - 5*5).
             grid = derived_grid(config.width, config.height, detection_horizon(config.card_size, config.sectors)[0])
             config = replace(config, exploration_grid=grid, t_max=grid * grid + 15)
         sensor = SceneSensor(build_pyramid(image), fovea_size=config.fovea_size, sectors=config.sectors)
-        return run_episode(sensor, EpisodeInput(config.query, config.width, config.height, config.k), config, retina_calibrator, network, device=device)
+        return run_episode(
+            sensor, EpisodeInput(config.query, config.width, config.height, config.k),
+            config, retina_calibrator, network, device=device,
+            require_all_scored=method == "saccadenet_confirm_unscored",
+            strategy={
+                "saccadenet_map": "map", "saccadenet_fixed": "fixed",
+                "saccadenet_random": "random",
+            }.get(method, "gain"),
+            policy_seed=policy_seed,
+        )
     if method == "full_res_sliding":
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
     if method == "downsample_1stage":
         return run_downsample_1stage(image, config.query, network, device=device, tile_outputs=tile_outputs)
-    if method in ("two_stage", "two_stage_no_coarse"):
-        return run_two_stage(image, config.query, network, device=device, threshold=two_stage_threshold, probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage")
+    if method in ("two_stage", "two_stage_no_coarse", "two_stage_overview_192", "two_stage_overview_512", "two_stage_optimized"):
+        overview_width = {
+            "two_stage_overview_192": 192, "two_stage_overview_512": 512,
+            "two_stage_optimized": optimized_overview_width(config.width),
+        }.get(method, 1024)
+        return run_two_stage(
+            image, config.query, network, device=device, threshold=two_stage_threshold,
+            probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage",
+            overview_width=overview_width,
+        )
     raise ValueError(f"unknown method {method}")
 
 
@@ -210,7 +235,7 @@ def main() -> None:
             try:
                 if image is None:
                     raise canvas_error
-                result = run_job(method, image, config, network, retina_calibrator, two_stage_calibrator, device=device, tile_outputs=cfg["tile_outputs"], two_stage_threshold=cfg["two_stage_threshold"])
+                result = run_job(method, image, config, network, retina_calibrator, two_stage_calibrator, device=device, tile_outputs=cfg["tile_outputs"], two_stage_threshold=cfg["two_stage_threshold"], policy_seed=seed)
                 if torch.cuda.is_available():
                     torch.cuda.synchronize()
                 evaluation = evaluate_answer(result.answer_xy, truth, match_radius=cfg["match_radius"])

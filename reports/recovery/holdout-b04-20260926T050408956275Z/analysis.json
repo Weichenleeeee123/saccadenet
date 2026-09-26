@@ -1,0 +1,36 @@
+{
+  "run": "runs\\20260926T045334378974Z-8a8229b5-recovery_b04_holdout-final",
+  "audit": {
+    "planned": 1200,
+    "recorded": 1200,
+    "seed_rows": 400,
+    "errors_bytes": 0,
+    "episodes_sha256": "c2834f3fb80f41c2b0a86de11681ddf5a25e119a23f76114c0e59655efeb7702"
+  },
+  "pooled_hit_diff": [
+    {
+      "a": "saccadenet_lite",
+      "b": "two_stage_no_coarse",
+      "pairs": 400,
+      "only_a": 0,
+      "only_b": 0,
+      "hit_diff": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    },
+    {
+      "a": "saccadenet_lite",
+      "b": "two_stage_optimized",
+      "pairs": 400,
+      "only_a": 0,
+      "only_b": 0,
+      "hit_diff": 0.0,
+      "low": 0.0,
+      "high": 0.0
+    }
+  ],
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 40000
+  }
+}

@@ -1,6 +1,9 @@
 import numpy as np
 import torch
 
+import saccadenet.exp.e1_resolution as e1_resolution
+from saccadenet.config import EpisodeConfig
+from saccadenet.exp.e1_resolution import run_job
 from saccadenet.models.fovea import FoveaNet
 from saccadenet.cost.accounting import count_model_flops
 from saccadenet.run.baselines import _DenseAdapter, _crop, _dense_query_map_tiled, _coarse_card_centers, _window_starts, fit_platt, ideal_dense_flops, run_two_stage
@@ -71,3 +74,36 @@ def test_two_stage_without_coarse_cnn_still_checks_high_resolution_card():
     assert result.answer_xy is not None
     assert result.steps == 1
     assert result.costs["semantic_cnn_flops"] == count_model_flops(model, (1, 3, 96, 96))
+
+
+def test_two_stage_can_use_sample_matched_small_overview():
+    image = np.full((1080, 1920, 3), 100, dtype=np.uint8)
+    image[444:636, 864:1056] = 225
+    model = FoveaNet().eval()
+    standard = run_two_stage(image, 3, model, device=torch.device("cpu"), coarse_ranking=False)
+    small = run_two_stage(
+        image, 3, model, device=torch.device("cpu"),
+        coarse_ranking=False, overview_width=192,
+    )
+    assert small.answer_xy is not None
+    assert np.linalg.norm(np.asarray(small.answer_xy) - (960, 540)) <= 48
+    assert small.costs["sensing_bytes"] < standard.costs["sensing_bytes"]
+
+
+def test_experiment_driver_dispatches_small_overview():
+    image = np.full((1080, 1920, 3), 100, dtype=np.uint8)
+    image[444:636, 864:1056] = 225
+    result = run_job(
+        "two_stage_overview_192", image, EpisodeConfig(k=1, query=3),
+        FoveaNet().eval(), None, None,
+        device=torch.device("cpu"), tile_outputs=48, two_stage_threshold=0.95,
+    )
+    assert result.answer_xy is not None
+    assert np.linalg.norm(np.asarray(result.answer_xy) - (960, 540)) <= 48
+
+
+def test_optimized_overview_width_is_frozen_by_resolution():
+    assert e1_resolution.optimized_overview_width(1920) == 1024
+    assert e1_resolution.optimized_overview_width(3840) == 192
+    assert e1_resolution.optimized_overview_width(7680) == 512
+    assert e1_resolution.optimized_overview_width(15360) == 1024

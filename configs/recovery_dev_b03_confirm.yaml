@@ -1,0 +1,17 @@
+name: recovery_dev_b03_confirm
+run_tag: recovery_b03_confirm
+checkpoint: checkpoints/fovea/20260925T145236155331Z-b107b36e/epoch-008.pt
+retina_fit: reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json
+two_stage_fit: reports/calibration/two-stage-platt-20260925T151159460820Z-3d80b18c.json
+methods: [saccadenet_lite, saccadenet_confirm_unscored, two_stage_no_coarse]
+resolutions: [[3840, 2160], [7680, 4320]]
+test_seed_start: 32000
+test_seed_count: 0
+full_16k_count: 0
+development_seed_start: 20212
+development_smoke_count: 50
+tile_outputs: 48
+two_stage_threshold: 0.95
+match_radius: 48
+balanced_method_order: true
+warmup_forward_count: 3
