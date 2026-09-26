@@ -125,7 +125,8 @@ def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict
     if own is None or own["steps"] != len(steps) or not math.isclose(own["semantic_flops"], steps[-1]["semantic_flops"]):
         raise ValueError(f"demo frames disagree with episodes.csv for {spec}")
     return {
-        "id": episode_id, "spec": spec, "method": key[0], "run": run_dir.name, "note": note, "width": key[1], "height": key[2], "seed": key[3],
+        "id": episode_id, "spec": spec, "method": key[0], "run": run_dir.name, "git_head": manifest["git_head"],
+        "checkpoint_sha256": manifest["checkpoint_sha256"], "note": note, "width": key[1], "height": key[2], "seed": key[3],
         "query": int(trace["query"]), "reason": trace["reason"], "attempt_id": trace["attempt_id"],
         "answer": [float(v) for v in trace["answer_xy"]] if trace["answer_xy"] is not None else None,
         "truth": [float(v) for v in target_xy], "zoom_span": zoom_span,

@@ -73,6 +73,7 @@
     $("stepTotal").textContent = e.steps.length;
     $("subtitle").textContent = `${e.width.toLocaleString()} × ${e.height.toLocaleString()} 画布${tagOf(e)} · 12 张卡片里找数字「${e.query}」${e.note ? " · " + e.note : ""}`;
     $("zoomSpan").textContent = `${e.zoom_span.toLocaleString()} px 视野`;
+    drawFoot(e);
     render();
   }
 
@@ -262,7 +263,10 @@
     else if (event.key.toLowerCase() === "v") document.querySelector(`.view-toggle button[data-view="${state.view === "seen" ? "real" : "seen"}"]`).click();
   });
 
-  $("foot").innerHTML = `来源 <code>${D.source_run}</code> · Git <code>${D.git_head.slice(0, 8)}</code> · 权重 SHA256 <code>${D.checkpoint_sha256.slice(0, 12)}…</code>。逐帧由记录的种子确定性重建画布、按保存的 trace 回放，没有重新推理。“网络所见”只用当前这一眼的视网膜样本重建；语义算量为解析估计（CNN 按 1 MAC = 2 FLOPs）。空格播放，←/→ 逐眼，V 切换画面。`;
+  const footTail = `逐帧由记录的种子确定性重建画布、按保存的 trace 回放，没有重新推理。“网络所见”只用当前这一眼的视网膜样本重建；语义算量为解析估计（CNN 按 1 MAC = 2 FLOPs）。空格播放，←/→ 逐眼，V 切换画面。`;
+  function drawFoot(e) {
+    $("foot").innerHTML = `来源 <code>${e.run || D.source_run}</code> · Git <code>${(e.git_head || D.git_head).slice(0, 8)}</code> · 权重 SHA256 <code>${(e.checkpoint_sha256 || D.checkpoint_sha256).slice(0, 12)}…</code>。${footTail}`;
+  }
   buildTabs();
   const params = new URLSearchParams(location.search);
   select(Math.min(D.episodes.length - 1, Math.max(0, Number(params.get("ep")) || 0)));

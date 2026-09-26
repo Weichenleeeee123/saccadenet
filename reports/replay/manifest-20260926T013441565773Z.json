@@ -1,0 +1,43 @@
+{
+  "demo_dir": "artifacts\\demo\\demo-20260926T013441565773Z",
+  "source_run": "20260925T152349319841Z-a6a00495-e1-final",
+  "source_git_head": "a6a004952cb6f2ea96210527cfbe3df420571441",
+  "checkpoint_sha256": "3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9",
+  "generated_utc": "20260926T013441565773Z",
+  "checks": "frame count == trace steps == episodes.csv steps; last-frame semantic FLOPs == episodes.csv; regenerated target == saved truth",
+  "episodes": [
+    {
+      "run": "20260925T152349319841Z-a6a00495-e1-final",
+      "spec": "saccadenet_lite:15360x8640:30000",
+      "selection_reason": "16K 第一个测试种子，非挑选",
+      "frames": 30,
+      "reason": "threshold",
+      "hit": 1
+    },
+    {
+      "run": "20260925T161450886661Z-a4660741-e5-final",
+      "spec": "saccadenet_lite:24576x13824:30004",
+      "selection_reason": "24K 冻结5×5网格：按种子顺序第一个漏掉目标的局",
+      "frames": 25,
+      "reason": "search_exhausted",
+      "hit": 0
+    },
+    {
+      "run": "20260925T161450886661Z-a4660741-e5-final",
+      "spec": "saccadenet_derived_grid:24576x13824:30004",
+      "selection_reason": "同一张24K画布，按公式推出的8×8网格",
+      "frames": 65,
+      "reason": "threshold",
+      "hit": 1
+    },
+    {
+      "run": "20260925T152349319841Z-a6a00495-e1-final",
+      "spec": "saccadenet_lite:1920x1080:30002",
+      "selection_reason": "按种子顺序的第一个失败：过度自信错停",
+      "frames": 2,
+      "reason": "threshold",
+      "hit": 0
+    }
+  ],
+  "open": "python -m http.server 8765 --directory artifacts\\demo  then  http://127.0.0.1:8765/demo-20260926T013441565773Z/index.html"
+}

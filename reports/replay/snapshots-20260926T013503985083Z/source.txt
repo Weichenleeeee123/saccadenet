@@ -1,0 +1,2 @@
+demo: artifacts\demo\demo-20260926T013441565773Z
+shots: ['0:1:view-seen', '0:18:explore', '0:30:found', '1:25:24k-frozen-miss', '2:65:24k-derived-hit', '3:2:overconfident-fail']
