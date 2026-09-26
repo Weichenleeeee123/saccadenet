@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+import saccadenet.exp.e1_resolution as e1_resolution
 from saccadenet.config import EpisodeConfig
 from saccadenet.exp.e1_resolution import run_job
 from saccadenet.models.fovea import FoveaNet
@@ -99,3 +100,10 @@ def test_experiment_driver_dispatches_small_overview():
     )
     assert result.answer_xy is not None
     assert np.linalg.norm(np.asarray(result.answer_xy) - (960, 540)) <= 48
+
+
+def test_optimized_overview_width_is_frozen_by_resolution():
+    assert e1_resolution.optimized_overview_width(1920) == 1024
+    assert e1_resolution.optimized_overview_width(3840) == 192
+    assert e1_resolution.optimized_overview_width(7680) == 512
+    assert e1_resolution.optimized_overview_width(15360) == 1024

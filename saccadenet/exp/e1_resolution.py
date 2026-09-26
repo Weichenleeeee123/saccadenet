@@ -72,6 +72,11 @@ def balanced_method_order(methods: list[str], seed: int) -> list[str]:
     return methods[offset:] + methods[:offset]
 
 
+def optimized_overview_width(canvas_width: int) -> int:
+    """Development-selected, frozen overview widths for the new holdout."""
+    return {3840: 192, 7680: 512}.get(canvas_width, 1024)
+
+
 def _wilson(hits: int, trials: int) -> tuple[float, float]:
     if trials == 0:
         return float("nan"), float("nan")
@@ -141,8 +146,11 @@ def run_job(
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
     if method == "downsample_1stage":
         return run_downsample_1stage(image, config.query, network, device=device, tile_outputs=tile_outputs)
-    if method in ("two_stage", "two_stage_no_coarse", "two_stage_overview_192", "two_stage_overview_512"):
-        overview_width = {"two_stage_overview_192": 192, "two_stage_overview_512": 512}.get(method, 1024)
+    if method in ("two_stage", "two_stage_no_coarse", "two_stage_overview_192", "two_stage_overview_512", "two_stage_optimized"):
+        overview_width = {
+            "two_stage_overview_192": 192, "two_stage_overview_512": 512,
+            "two_stage_optimized": optimized_overview_width(config.width),
+        }.get(method, 1024)
         return run_two_stage(
             image, config.query, network, device=device, threshold=two_stage_threshold,
             probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage",
