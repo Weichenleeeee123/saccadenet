@@ -141,8 +141,13 @@ def run_job(
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
     if method == "downsample_1stage":
         return run_downsample_1stage(image, config.query, network, device=device, tile_outputs=tile_outputs)
-    if method in ("two_stage", "two_stage_no_coarse"):
-        return run_two_stage(image, config.query, network, device=device, threshold=two_stage_threshold, probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage")
+    if method in ("two_stage", "two_stage_no_coarse", "two_stage_overview_192", "two_stage_overview_512"):
+        overview_width = {"two_stage_overview_192": 192, "two_stage_overview_512": 512}.get(method, 1024)
+        return run_two_stage(
+            image, config.query, network, device=device, threshold=two_stage_threshold,
+            probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage",
+            overview_width=overview_width,
+        )
     raise ValueError(f"unknown method {method}")
 
 
