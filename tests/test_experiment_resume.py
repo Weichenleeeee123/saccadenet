@@ -39,3 +39,10 @@ def test_truncated_trace_is_retained_and_new_segment_is_used(tmp_path):
     assert resumed.trace_path.name == "trace-resume-1.jsonl"
     assert (run_dir / "trace.jsonl").read_text(encoding="utf-8") == '{"incomplete":'
     assert "truncated" in resumed.trace_path.read_text(encoding="utf-8")
+def test_balanced_method_order_rotates_each_seed():
+    from saccadenet.exp import e1_resolution
+    assert hasattr(e1_resolution, "balanced_method_order")
+    methods = ["saccadenet_lite", "two_stage", "two_stage_no_coarse"]
+    assert e1_resolution.balanced_method_order(methods, 0) == methods
+    assert e1_resolution.balanced_method_order(methods, 1) == methods[1:] + methods[:1]
+    assert e1_resolution.balanced_method_order(methods, 2) == methods[2:] + methods[:2]

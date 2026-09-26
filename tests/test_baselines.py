@@ -61,3 +61,13 @@ def test_two_stage_empty_and_edge_crop_do_not_read_outside_image():
     assert result.reason == "no_candidates"
     assert _crop(image, (0, 0)).shape == (96, 96, 3)
     assert _crop(image, (1919, 1079)).shape == (96, 96, 3)
+
+
+def test_two_stage_without_coarse_cnn_still_checks_high_resolution_card():
+    image = np.full((1080, 1920, 3), 100, dtype=np.uint8)
+    image[200:392, 200:392] = 220
+    model = FoveaNet().eval()
+    result = run_two_stage(image, 3, model, device=torch.device("cpu"), coarse_ranking=False)
+    assert result.answer_xy is not None
+    assert result.steps == 1
+    assert result.costs["semantic_cnn_flops"] == count_model_flops(model, (1, 3, 96, 96))

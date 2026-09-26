@@ -11,7 +11,7 @@ from scipy.special import expit
 
 from saccadenet.bayes.calibrate import score_query_logits
 from saccadenet.contracts import EpisodeLog
-from saccadenet.cost.accounting import CostMeter, count_model_flops
+from saccadenet.cost.accounting import CostMeter, count_fovea_flops
 
 
 class _DenseAdapter(torch.nn.Module):
@@ -61,23 +61,7 @@ def _window_starts(length: int) -> list[int]:
 
 def ideal_dense_flops(network: torch.nn.Module, width: int, height: int) -> int:
     """Analytic no-overlap dense CNN FLOPs; excludes added edge windows."""
-    h, w = height, width
-    total = 0
-    for layer in (*network.features, network.classifier):
-        if isinstance(layer, torch.nn.Conv2d):
-            kh, kw = layer.kernel_size
-            sh, sw = layer.stride
-            ph, pw = layer.padding
-            dh, dw = layer.dilation
-            h = (h + 2 * ph - dh * (kh - 1) - 1) // sh + 1
-            w = (w + 2 * pw - dw * (kw - 1) - 1) // sw + 1
-            total += h * w * layer.out_channels * (layer.in_channels // layer.groups) * kh * kw * 2
-        elif isinstance(layer, torch.nn.MaxPool2d):
-            kernel = layer.kernel_size if isinstance(layer.kernel_size, tuple) else (layer.kernel_size,) * 2
-            stride = layer.stride if isinstance(layer.stride, tuple) else (layer.stride,) * 2
-            h = (h - kernel[0]) // stride[0] + 1
-            w = (w - kernel[1]) // stride[1] + 1
-    return total
+    return count_fovea_flops(network, width, height)
 
 
 def _groups(starts: list[int], tile_outputs: int) -> list[list[int]]:
@@ -122,7 +106,7 @@ def _dense_query_map_tiled(
             tensor = torch.from_numpy(patch).permute(2, 0, 1)[None].to(device=device, dtype=torch.float32).div_(255)
             shape = (tensor.shape[2], tensor.shape[3])
             if shape not in flops_cache:
-                flops_cache[shape] = count_model_flops(adapter, tuple(tensor.shape))
+                flops_cache[shape] = count_fovea_flops(network, shape[1], shape[0])
             with torch.inference_mode():
                 logits = adapter(tensor)[0]
                 raw = score_query_logits(logits.permute(1, 2, 0).reshape(-1, 11), query)
@@ -168,7 +152,7 @@ def _crop_scores(
 ) -> tuple[list[float], int]:
     if not centers:
         return [], 0
-    one_flops = count_model_flops(network, (1, 3, 96, 96))
+    one_flops = count_fovea_flops(network, 96, 96)
     scores: list[float] = []
     for offset in range(0, len(centers), 64):
         patches = np.stack([_crop(image, xy) for xy in centers[offset : offset + 64]])
@@ -216,6 +200,7 @@ def run_two_stage(
     device: torch.device,
     threshold: float = 0.95,
     probability_calibration: PlattCalibration | None = None,
+    coarse_ranking: bool = True,
 ) -> EpisodeLog:
     started = time.perf_counter()
     small, scale_x, scale_y, resize_flops = _downsample(image)
@@ -226,13 +211,16 @@ def run_two_stage(
     meter.add_semantic("detector", small.shape[0] * small.shape[1] * 4)
     if not coarse:
         return EpisodeLog(None, "no_candidates", 0, [], meter.snapshot(), time.perf_counter() - started)
-    coarse_scores, flops = _crop_scores(small, coarse, network, query, device)
-    meter.add_sensing_bytes(len(coarse) * 96 * 96 * 3)
-    meter.add_semantic("cnn", flops)
-    ordered = sorted(range(len(coarse)), key=lambda index: (-coarse_scores[index], index))
+    if coarse_ranking:
+        coarse_scores, flops = _crop_scores(small, coarse, network, query, device)
+        meter.add_sensing_bytes(len(coarse) * 96 * 96 * 3)
+        meter.add_semantic("cnn", flops)
+        ordered = sorted(range(len(coarse)), key=lambda index: (-coarse_scores[index], index))
+    else:
+        ordered = range(len(coarse))
     best_score, best_xy = -float("inf"), None
     trace = []
-    one_flops = count_model_flops(network, (1, 3, 96, 96))
+    one_flops = count_fovea_flops(network, 96, 96)
     reason = "exhausted"
     for rank, index in enumerate(ordered):
         xy = (coarse[index][0] * scale_x, coarse[index][1] * scale_y)

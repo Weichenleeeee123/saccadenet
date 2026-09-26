@@ -11,7 +11,8 @@ from saccadenet.bayes.fusion import FusionB
 from saccadenet.bayes.policy import choose_fixation, exploration_anchor, fixation_candidates, should_stop
 from saccadenet.config import EpisodeConfig
 from saccadenet.contracts import EpisodeInput, EpisodeLog, Sensor
-from saccadenet.cost.accounting import CostMeter, count_model_flops
+from saccadenet.cost.accounting import CostMeter, count_fovea_flops, count_model_flops
+from saccadenet.models.fovea import FoveaNet
 from saccadenet.retina.detect import CandidateTracker, detect_on_retina
 from saccadenet.retina.pyramid import Pyramid
 from saccadenet.retina.reconstruct import candidate_view
@@ -48,7 +49,11 @@ def run_episode(
     pyramid_charge = int(getattr(sensor, "pyramid_add_count", 0))
     meter.record_pyramid_once(pyramid_charge)
     meter.add_sensing_bytes(int(getattr(sensor, "pyramid_bytes", 0)))
-    one_cnn_flops = count_model_flops(network, (1, 3, 96, 96))
+    one_cnn_flops = (
+        count_fovea_flops(network, 96, 96)
+        if isinstance(network, FoveaNet)
+        else count_model_flops(network, (1, 3, 96, 96))
+    )
     tracker = CandidateTracker(merge_radius=config.candidate_merge_radius)
     fusion = FusionB()
     network.eval()

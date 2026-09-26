@@ -64,6 +64,14 @@ def planned_jobs(cfg: dict, *, smoke: bool = False) -> list[tuple[str, int, int,
     return result
 
 
+def balanced_method_order(methods: list[str], seed: int) -> list[str]:
+    """Rotate methods across successive seeds to balance execution order."""
+    if not methods:
+        return []
+    offset = seed % len(methods)
+    return methods[offset:] + methods[:offset]
+
+
 def _wilson(hits: int, trials: int) -> tuple[float, float]:
     if trials == 0:
         return float("nan"), float("nan")
@@ -121,8 +129,8 @@ def run_job(
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
     if method == "downsample_1stage":
         return run_downsample_1stage(image, config.query, network, device=device, tile_outputs=tile_outputs)
-    if method == "two_stage":
-        return run_two_stage(image, config.query, network, device=device, threshold=two_stage_threshold, probability_calibration=two_stage_calibrator)
+    if method in ("two_stage", "two_stage_no_coarse"):
+        return run_two_stage(image, config.query, network, device=device, threshold=two_stage_threshold, probability_calibration=two_stage_calibrator, coarse_ranking=method == "two_stage")
     raise ValueError(f"unknown method {method}")
 
 
@@ -160,6 +168,13 @@ def main() -> None:
     retina_calibrator = GaussianCalibrator(**fit["model"])
     platt = json.loads(Path(cfg["two_stage_fit"]).read_text(encoding="utf-8"))
     two_stage_calibrator = PlattCalibration(platt["slope"], platt["intercept"])
+    if int(cfg.get("warmup_forward_count", 0)):
+        with torch.inference_mode():
+            sample = torch.zeros((1, 3, 96, 96), device=device)
+            for _ in range(int(cfg["warmup_forward_count"])):
+                network(sample)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
     bank = MnistBank.from_split(split)
     recorded_seeds = set()
     with (store.run_dir / "seeds.csv").open(newline="", encoding="utf-8") as file:
@@ -185,7 +200,7 @@ def main() -> None:
             image = truth = None
             canvas_seconds = time.perf_counter() - canvas_start
             canvas_error = exc
-        for method in methods:
+        for method in (balanced_method_order(methods, seed) if cfg.get("balanced_method_order", False) else methods):
             key = (method, width, height, seed)
             attempt_id = store.next_attempt(key)
             row = {"attempt_id": attempt_id, "method": method, "width": width, "height": height, "seed": seed, "canvas_seconds": canvas_seconds}

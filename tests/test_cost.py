@@ -1,12 +1,26 @@
 import pytest
 import torch
 
+from saccadenet.cost import accounting
 from saccadenet.cost.accounting import CostMeter, count_model_flops
+from saccadenet.models.fovea import FoveaNet
 
 
 def test_single_conv_count_uses_two_flops_per_multiply_accumulate():
     model = torch.nn.Conv2d(1, 2, 3, bias=False)
     assert count_model_flops(model, (1, 1, 5, 5)) == 2 * 3 * 3 * 2 * 3 * 3
+
+
+def test_fovea_analytic_flops_matches_profile_without_forward():
+    assert hasattr(accounting, "count_fovea_flops")
+    model = FoveaNet().eval()
+    from saccadenet.run.baselines import _DenseAdapter
+    expected_patch = count_model_flops(model, (1, 3, 96, 96))
+    expected_dense = count_model_flops(_DenseAdapter(model), (1, 3, 129, 161))
+    model.forward = lambda *_: (_ for _ in ()).throw(AssertionError("forward called"))
+    model.dense = lambda *_: (_ for _ in ()).throw(AssertionError("dense called"))
+    assert accounting.count_fovea_flops(model, 96, 96) == expected_patch
+    assert accounting.count_fovea_flops(model, 161, 129) == expected_dense
 
 
 def test_costs_are_monotonic_and_pyramid_is_charged_once():

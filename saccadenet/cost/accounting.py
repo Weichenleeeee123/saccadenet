@@ -66,3 +66,24 @@ def count_model_flops(model: torch.nn.Module, input_shape: tuple[int, ...]) -> i
         for hook in hooks:
             hook.remove()
     return result
+
+
+def count_fovea_flops(network: torch.nn.Module, width: int, height: int) -> int:
+    """Count FoveaNet convolutions from layer geometry without an extra forward pass."""
+    h, w = height, width
+    total = 0
+    for layer in (*network.features, network.classifier):
+        if isinstance(layer, torch.nn.Conv2d):
+            kh, kw = layer.kernel_size
+            sh, sw = layer.stride
+            ph, pw = layer.padding
+            dh, dw = layer.dilation
+            h = (h + 2 * ph - dh * (kh - 1) - 1) // sh + 1
+            w = (w + 2 * pw - dw * (kw - 1) - 1) // sw + 1
+            total += h * w * layer.out_channels * (layer.in_channels // layer.groups) * kh * kw * 2
+        elif isinstance(layer, torch.nn.MaxPool2d):
+            kernel = layer.kernel_size if isinstance(layer.kernel_size, tuple) else (layer.kernel_size,) * 2
+            stride = layer.stride if isinstance(layer.stride, tuple) else (layer.stride,) * 2
+            h = (h - kernel[0]) // stride[0] + 1
+            w = (w - kernel[1]) // stride[1] + 1
+    return total
