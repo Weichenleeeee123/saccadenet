@@ -87,7 +87,7 @@ def _baselines(run_dir: Path, width: int, seed: int) -> dict:
 
 def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict:
     key = _episode_spec(spec)
-    if key[0] != "saccadenet_lite":
+    if key[0] not in ("saccadenet_lite", "saccadenet_derived_grid"):
         raise ValueError("demo requires a SaccadeNet trace")
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     trace = _load_trace(run_dir, key)
@@ -96,7 +96,7 @@ def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict
     target_xy = tuple(map(float, truth.centers_xy[truth.target_index]))
     if truth.target_index != trace["truth_target_index"] or not np.allclose(target_xy, trace["truth_target_xy"]):
         raise ValueError("regenerated canvas does not match saved evaluation truth")
-    episode_id = f"{key[1]}x{key[2]}-{key[3]}"
+    episode_id = f"{key[1]}x{key[2]}-{key[3]}" + ("-derived" if key[0] == "saccadenet_derived_grid" else "")
     folder = target / episode_id
     folder.mkdir(parents=True)
     stage_h = round(STAGE_WIDTH * key[2] / key[1])
@@ -121,11 +121,11 @@ def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict
             "sensing_bytes": float(step["costs"]["sensing_bytes"]),
         })
     baselines = _baselines(run_dir, key[1], key[3])
-    own = baselines.get("saccadenet_lite")
+    own = baselines.get(key[0])
     if own is None or own["steps"] != len(steps) or not math.isclose(own["semantic_flops"], steps[-1]["semantic_flops"]):
         raise ValueError(f"demo frames disagree with episodes.csv for {spec}")
     return {
-        "id": episode_id, "spec": spec, "note": note, "width": key[1], "height": key[2], "seed": key[3],
+        "id": episode_id, "spec": spec, "method": key[0], "run": run_dir.name, "note": note, "width": key[1], "height": key[2], "seed": key[3],
         "query": int(trace["query"]), "reason": trace["reason"], "attempt_id": trace["attempt_id"],
         "answer": [float(v) for v in trace["answer_xy"]] if trace["answer_xy"] is not None else None,
         "truth": [float(v) for v in target_xy], "zoom_span": zoom_span,
@@ -134,8 +134,10 @@ def export_episode(run_dir: Path, spec: str, target: Path, *, note: str) -> dict
 
 
 def export_demo(run_dir: Path, episodes: list[tuple[str, str]], out: Path) -> Path:
+    """Episodes are (spec, note); a spec may be prefixed with another run directory as RUN@spec."""
     run_dir = Path(run_dir)
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    resolved = [(Path(spec.split("@", 1)[0]), spec.split("@", 1)[1], note) if "@" in spec else (run_dir, spec, note) for spec, note in episodes]
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     target = out / f"demo-{stamp}"
     target.mkdir(parents=True, exist_ok=False)
@@ -144,7 +146,7 @@ def export_demo(run_dir: Path, episodes: list[tuple[str, str]], out: Path) -> Pa
     data = {
         "source_run": run_dir.name, "git_head": manifest["git_head"], "checkpoint_sha256": manifest["checkpoint_sha256"],
         "generated_utc": stamp, "note": "Frames regenerated deterministically from recorded seeds and saved traces; no inference rerun.",
-        "episodes": [export_episode(run_dir, spec, target, note=note) for spec, note in episodes],
+        "episodes": [export_episode(run, spec, target, note=note) for run, spec, note in resolved],
     }
     (target / "data.js").write_text("window.DEMO_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n", encoding="utf-8")
     manifest_dir = Path("reports/replay")
@@ -153,8 +155,8 @@ def export_demo(run_dir: Path, episodes: list[tuple[str, str]], out: Path) -> Pa
         "demo_dir": str(target), "source_run": run_dir.name, "source_git_head": manifest["git_head"],
         "checkpoint_sha256": manifest["checkpoint_sha256"], "generated_utc": stamp,
         "checks": "frame count == trace steps == episodes.csv steps; last-frame semantic FLOPs == episodes.csv; regenerated target == saved truth",
-        "episodes": [{"spec": e["spec"], "selection_reason": e["note"], "frames": len(e["steps"]), "reason": e["reason"],
-                      "hit": e["baselines"]["saccadenet_lite"]["hit"]} for e in data["episodes"]],
+        "episodes": [{"run": e["run"], "spec": e["spec"], "selection_reason": e["note"], "frames": len(e["steps"]), "reason": e["reason"],
+                      "hit": e["baselines"][e["method"]]["hit"]} for e in data["episodes"]],
         "open": f"python -m http.server 8765 --directory {out}  then  http://127.0.0.1:8765/{target.name}/index.html",
     }
     with (manifest_dir / f"manifest-{stamp}.json").open("x", encoding="utf-8") as file:
@@ -165,7 +167,7 @@ def export_demo(run_dir: Path, episodes: list[tuple[str, str]], out: Path) -> Pa
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", type=Path, required=True)
-    parser.add_argument("--episode", action="append", required=True, help="method:WIDTHxHEIGHT:seed=说明")
+    parser.add_argument("--episode", action="append", required=True, help="[RUN@]method:WIDTHxHEIGHT:seed=说明")
     parser.add_argument("--out", type=Path, default=Path("artifacts/demo"))
     args = parser.parse_args()
     episodes = [tuple(item.split("=", 1)) if "=" in item else (item, "") for item in args.episode]

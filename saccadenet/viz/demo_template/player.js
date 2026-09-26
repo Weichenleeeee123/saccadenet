@@ -7,12 +7,13 @@
   const css = getComputedStyle(document.documentElement);
   const C = (name) => css.getPropertyValue(name).trim();
   const METHODS = [
-    ["saccadenet_lite", "SaccadeNet"],
+    ["saccadenet_lite", "SaccadeNet 5×5"],
+    ["saccadenet_derived_grid", "SaccadeNet 推导网格"],
     ["two_stage", "两阶段"],
     ["downsample_1stage", "一段缩图"],
     ["full_res_sliding", "全分辨率滑窗"],
   ];
-  const COLORS = { saccadenet_lite: C("--gaze"), two_stage: "#e05d78", downsample_1stage: "#8a7fe0", full_res_sliding: "#e8a07f" };
+  const COLORS = { self: C("--gaze"), saccadenet_lite: "#7fb8b3", saccadenet_derived_grid: "#7fb8b3", two_stage: "#e05d78", downsample_1stage: "#8a7fe0", full_res_sliding: "#e8a07f" };
   const state = { ep: 0, step: 0, view: "seen", playing: false, timer: null };
   const cache = new Map();
 
@@ -26,8 +27,10 @@
   }
   const pad = (n) => String(n).padStart(3, "0");
   const ep = () => D.episodes[state.ep];
-  const hitOf = (e) => (e.baselines.saccadenet_lite ? e.baselines.saccadenet_lite.hit === 1 : null);
-  const resLabel = (w) => ({ 1920: "1080p", 3840: "4K", 7680: "8K", 15360: "16K" }[w] || `${w}px`);
+  const methodOf = (e) => e.method || "saccadenet_lite";
+  const hitOf = (e) => (e.baselines[methodOf(e)] ? e.baselines[methodOf(e)].hit === 1 : null);
+  const tagOf = (e) => (e.width === 24576 ? (methodOf(e) === "saccadenet_derived_grid" ? " · 推导8×8" : " · 冻结5×5") : "");
+  const resLabel = (w) => ({ 1920: "1080p", 3840: "4K", 7680: "8K", 15360: "16K", 24576: "24K" }[w] || `${w}px`);
 
   function fmtFlops(flops) {
     if (flops < 1e9) return [(flops / 1e6).toFixed(flops < 1e7 ? 2 : 1), "MFLOPs"];
@@ -51,7 +54,7 @@
     D.episodes.forEach((e, index) => {
       const button = document.createElement("button");
       const hit = hitOf(e);
-      button.innerHTML = `<span class="dot" style="background:${hit ? C("--truth") : C("--miss")}"></span>${resLabel(e.width)} · 种子 ${e.seed} · ${hit ? "命中" : "未命中"}`;
+      button.innerHTML = `<span class="dot" style="background:${hit ? C("--truth") : C("--miss")}"></span>${resLabel(e.width)}${tagOf(e)} · 种子 ${e.seed} · ${hit ? "命中" : "未命中"}`;
       button.onclick = () => select(index);
       tabs.appendChild(button);
     });
@@ -68,7 +71,7 @@
     [...$("tabs").children].forEach((b, i) => b.classList.toggle("on", i === index));
     $("scrub").max = e.steps.length - 1;
     $("stepTotal").textContent = e.steps.length;
-    $("subtitle").textContent = `${e.width.toLocaleString()} × ${e.height.toLocaleString()} 画布 · 12 张卡片里找数字「${e.query}」${e.note ? " · " + e.note : ""}`;
+    $("subtitle").textContent = `${e.width.toLocaleString()} × ${e.height.toLocaleString()} 画布${tagOf(e)} · 12 张卡片里找数字「${e.query}」${e.note ? " · " + e.note : ""}`;
     $("zoomSpan").textContent = `${e.zoom_span.toLocaleString()} px 视野`;
     render();
   }
@@ -176,10 +179,10 @@
   }
 
   function drawCompare(e, s) {
-    const rows = [];
+    const rows = [{ key: "self", name: "本局", value: s.semantic_flops, note: `第 ${state.step + 1} 眼累计` }];
     METHODS.forEach(([key, name]) => {
-      if (key === "saccadenet_lite") rows.push({ key, name, value: s.semantic_flops, note: `第 ${state.step + 1} 眼累计` });
-      else if (e.baselines[key]) {
+      if (key === methodOf(e)) return;
+      if (e.baselines[key]) {
         const b = e.baselines[key];
         rows.push({ key, name, value: b.semantic_flops, note: `${b.hit ? "命中" : "未命中"} · ${b.seconds.toFixed(2)} s` });
       }
@@ -187,7 +190,7 @@
     const floor = 1e7;
     const top = Math.max(...rows.map((r) => r.value), ...METHODS.map(([k]) => (e.baselines[k] ? e.baselines[k].semantic_flops : 0)));
     const width = (v) => Math.max(1.5, (100 * (Math.log10(Math.max(v, floor)) - Math.log10(floor))) / (Math.log10(top) - Math.log10(floor)));
-    $("compare").innerHTML = rows.map((r) => `<div class="row ${r.key === "saccadenet_lite" ? "me" : ""}"><span class="name">${r.name}</span><span class="track"><span class="fill" style="width:${width(r.value).toFixed(1)}%;background:${COLORS[r.key]}"></span></span><span class="num">${fmtShort(r.value)} · ${r.note}</span></div>`).join("");
+    $("compare").innerHTML = rows.map((r) => `<div class="row ${r.key === "self" ? "me" : ""}"><span class="name">${r.name}</span><span class="track"><span class="fill" style="width:${width(r.value).toFixed(1)}%;background:${COLORS[r.key]}"></span></span><span class="num">${fmtShort(r.value)} · ${r.note}</span></div>`).join("");
   }
 
   function render() {
