@@ -41,6 +41,7 @@ class Candidate:
     detector_score: float
     first_seen: int
     last_seen: int
+    localization_quality: float = 0.0
 
 
 @dataclass(frozen=True)

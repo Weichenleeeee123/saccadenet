@@ -54,3 +54,13 @@ def test_distant_detections_remain_distinct():
         [Detection((90.0, 90.0), 1.0), Detection((390.0, 90.0), 1.0)], step=0
     )
     assert len(candidates) == 2
+
+
+def test_card_edges_recenter_candidate_when_fovea_is_inside_card():
+    image = np.full((512, 512, 3), 126, dtype=np.uint8)
+    image[160:352, 160:352] = 225
+    retina = sample_retina(build_pyramid(image), (296, 256))
+    tracker = CandidateTracker(merge_radius=144)
+    candidates, _ = tracker.update(detect_on_retina(retina), step=0)
+    assert len(candidates) == 1
+    assert np.linalg.norm(np.asarray(candidates[0].xy) - (256, 256)) < 8

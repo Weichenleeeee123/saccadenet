@@ -12,6 +12,7 @@ from saccadenet.contracts import Candidate, RetinaOut
 class Detection:
     xy: tuple[float, float]
     score: float
+    localization_quality: float | None = None
 
 
 def _components(mask: np.ndarray):
@@ -31,7 +32,10 @@ def detect_on_retina(retina: RetinaOut, *, brightness_threshold: float = 195.0) 
             continue
         cx = retina.fixation_xy[0] + float(cols.mean()) - retina.fovea.shape[1] / 2
         cy = retina.fixation_xy[1] + float(rows.mean()) - retina.fovea.shape[0] / 2
-        result.append(Detection((cx, cy), float(fovea_brightness[rows, cols].mean() / 255)))
+        span_x = float(cols.max() - cols.min())
+        span_y = float(rows.max() - rows.min())
+        quality = max(0.0, min(span_x, span_y) - 0.5 * abs(span_x - span_y))
+        result.append(Detection((cx, cy), float(fovea_brightness[rows, cols].mean() / 255), quality))
 
     brightness = retina.logpolar.astype(np.float32).mean(axis=2)
     bright = (brightness >= brightness_threshold) & retina.logpolar_valid
@@ -42,9 +46,13 @@ def detect_on_retina(retina: RetinaOut, *, brightness_threshold: float = 195.0) 
             continue
         unique = np.unique(np.stack((rows, cols % sectors), axis=1), axis=0)
         sample_locations = retina.sample_xy[unique[:, 0], unique[:, 1]]
-        position = np.mean(sample_locations, axis=0)
+        low = np.min(sample_locations, axis=0)
+        high = np.max(sample_locations, axis=0)
+        position = (low + high) / 2
+        span_x, span_y = map(float, high - low)
+        quality = max(0.0, min(span_x, span_y) - 0.5 * abs(span_x - span_y))
         intensity = brightness[unique[:, 0], unique[:, 1]].mean()
-        result.append(Detection((float(position[0]), float(position[1])), float(intensity / 255)))
+        result.append(Detection((float(position[0]), float(position[1])), float(intensity / 255), quality))
     return result
 
 
@@ -61,7 +69,8 @@ class CandidateTracker:
 
     def update(self, detections: list[Detection], step: int) -> tuple[list[Candidate], set[int]]:
         reset_ids: set[int] = set()
-        for detection in sorted(detections, key=lambda item: -item.score):
+        for detection in sorted(detections, key=lambda item: (-(item.localization_quality if item.localization_quality is not None else item.score), -item.score)):
+            quality = detection.localization_quality if detection.localization_quality is not None else detection.score
             nearest = min(
                 self._candidates,
                 key=lambda candidate: np.linalg.norm(np.asarray(candidate.xy) - detection.xy),
@@ -69,13 +78,14 @@ class CandidateTracker:
             )
             distance = float(np.linalg.norm(np.asarray(nearest.xy) - detection.xy)) if nearest else float("inf")
             if nearest is None or distance > self.merge_radius:
-                self._candidates.append(Candidate(self._next_id, detection.xy, detection.score, step, step))
+                self._candidates.append(Candidate(self._next_id, detection.xy, detection.score, step, step, quality))
                 self._next_id += 1
                 continue
-            if detection.score > nearest.detector_score:
+            if quality > nearest.localization_quality or (quality == nearest.localization_quality and detection.score > nearest.detector_score):
                 if distance > self.reset_distance:
                     reset_ids.add(nearest.stable_id)
                 nearest.xy = detection.xy
                 nearest.detector_score = detection.score
+                nearest.localization_quality = quality
             nearest.last_seen = step
         return self.candidates, reset_ids
