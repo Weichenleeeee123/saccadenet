@@ -1,6 +1,7 @@
 """Eccentricity-conditional Gaussian evidence calibration."""
 
 import argparse
+import bisect
 import csv
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -47,7 +48,8 @@ class GaussianCalibrator:
     count1: tuple[int, ...]
 
     def _index(self, eccentricity: float) -> int:
-        return int(np.clip(np.searchsorted(self.edges, eccentricity, side="right") - 1, 0, len(self.mu0) - 1))
+        # Same bin as clip(searchsorted(edges, e, side="right") - 1, 0, bins - 1), without numpy overhead.
+        return min(max(bisect.bisect_right(self.edges, eccentricity) - 1, 0), len(self.mu0) - 1)
 
     def dprime(self, eccentricity: float) -> float:
         index = self._index(eccentricity)

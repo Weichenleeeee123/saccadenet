@@ -15,11 +15,18 @@ class Detection:
     localization_quality: float | None = None
 
 
-def _components(mask: np.ndarray):
+def _components(mask: np.ndarray, col_range: tuple[int, int] | None = None):
+    """Yield (rows, cols, area) per component in row-major pixel order, as np.where(labels == index) would.
+
+    With col_range=(low, high), components whose bounding box misses columns [low, high) are skipped.
+    """
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), connectivity=8)
     for index in range(1, count):
-        rows, cols = np.where(labels == index)
-        yield rows, cols, int(stats[index, cv2.CC_STAT_AREA])
+        left, top, box_w, box_h, area = (int(value) for value in stats[index, :5])
+        if col_range is not None and (left + box_w <= col_range[0] or left >= col_range[1]):
+            continue
+        rows, cols = np.nonzero(labels[top : top + box_h, left : left + box_w] == index)
+        yield rows + top, cols + left, area
 
 
 def detect_on_retina(retina: RetinaOut, *, brightness_threshold: float = 195.0) -> list[Detection]:
@@ -41,10 +48,15 @@ def detect_on_retina(retina: RetinaOut, *, brightness_threshold: float = 195.0) 
     bright = (brightness >= brightness_threshold) & retina.logpolar_valid
     sectors = bright.shape[1]
     wrapped = np.concatenate((bright, bright, bright), axis=1)
-    for rows, cols, area in _components(wrapped):
+    for rows, cols, area in _components(wrapped, (sectors, 2 * sectors)):
         if area < 1 or not np.any((cols >= sectors) & (cols < 2 * sectors)):
             continue
-        unique = np.unique(np.stack((rows, cols % sectors), axis=1), axis=0)
+        # Deduplicate (ring, sector) pairs; np.nonzero returns them in the same sorted order as np.unique(axis=0).
+        first_row = int(rows.min())
+        seen = np.zeros((int(rows.max()) - first_row + 1, sectors), dtype=bool)
+        seen[rows - first_row, cols % sectors] = True
+        unique_rows, unique_cols = np.nonzero(seen)
+        unique = np.stack((unique_rows + first_row, unique_cols), axis=1)
         sample_locations = retina.sample_xy[unique[:, 0], unique[:, 1]]
         low = np.min(sample_locations, axis=0)
         high = np.max(sample_locations, axis=0)

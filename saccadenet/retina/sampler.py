@@ -46,10 +46,15 @@ def sample_retina(
     sample_xy = np.stack((sample_x, sample_y), axis=-1).astype(np.float32)
     logpolar_valid = (sample_x >= 0) & (sample_x < width) & (sample_y >= 0) & (sample_y < height)
     logpolar = np.empty((n_rings, sectors, 3), dtype=np.uint8)
-    for index, ring_radius in enumerate(radii):
-        spacing = ring_radius * delta
-        level = int(np.clip(round(math.log2(max(spacing, 1.0))), 0, len(pyramid.levels) - 1))
-        logpolar[index : index + 1] = _remap(pyramid.levels[level], sample_xy[index : index + 1], 2**level)
+    top_level = len(pyramid.levels) - 1
+    levels = [min(max(round(math.log2(max(float(r) * delta, 1.0))), 0), top_level) for r in radii]
+    # Levels never decrease with radius, so each level is one contiguous block of rings: one remap per block.
+    start = 0
+    for stop in range(1, n_rings + 1):
+        if stop == n_rings or levels[stop] != levels[start]:
+            level = levels[start]
+            logpolar[start:stop] = _remap(pyramid.levels[level], sample_xy[start:stop], 2**level)
+            start = stop
     sample_count = fovea_size * fovea_size + n_rings * sectors
     return RetinaOut(
         fovea=fovea,
