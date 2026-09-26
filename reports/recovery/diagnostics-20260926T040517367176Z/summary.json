@@ -1,0 +1,9 @@
+{
+  "source_run": "runs\\20260926T040422325460Z-b8d9aec0-recovery_b02-smoke",
+  "n": 100,
+  "categories": {
+    "hit": 97,
+    "target_not_recalled": 2,
+    "wrong_other_stop": 1
+  }
+}

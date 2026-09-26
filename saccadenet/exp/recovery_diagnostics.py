@@ -18,6 +18,20 @@ def _nearest(xy, centers: np.ndarray) -> tuple[int, float]:
     return index, float(distances[index])
 
 
+def best_observation(steps: list[dict], candidate_id: int) -> dict | None:
+    """Match FusionB's highest-quality rule, including candidate resets."""
+    best = None
+    for step in steps:
+        if candidate_id in step.get("reset_ids", []):
+            best = None
+        for observation in step.get("observations", []):
+            if observation["candidate_id"] != candidate_id or observation["normalized_score"] is None:
+                continue
+            if best is None or float(observation["dprime"]) > float(best["dprime"]):
+                best = observation | {"step": step.get("step")}
+    return best
+
+
 def summarize_trace(trace: dict, centers: np.ndarray | None = None) -> dict:
     """Classify observations descriptively; truth is used only after inference."""
     if centers is None:
@@ -32,18 +46,8 @@ def summarize_trace(trace: dict, centers: np.ndarray | None = None) -> dict:
     winner_card, winner_offset = _nearest(winner["xy"], centers) if winner else (None, None)
     target_candidates = [c for c in candidates if (match := _nearest(c["xy"], centers))[0] == target_index and match[1] <= 48]
     target = min(target_candidates, key=lambda c: _nearest(c["xy"], centers)[1], default=None)
-    best: dict[int, dict] = {}
-    for step in trace["steps"]:
-        for candidate_id in step.get("reset_ids", []):
-            best.pop(int(candidate_id), None)
-        for observation in step.get("observations", []):
-            candidate_id = int(observation["candidate_id"])
-            if observation["normalized_score"] is None:
-                continue
-            if candidate_id not in best or float(observation["dprime"]) > float(best[candidate_id]["dprime"]):
-                best[candidate_id] = observation
-    target_obs = best.get(int(target["id"])) if target else None
-    winner_obs = best.get(int(winner["id"])) if winner else None
+    target_obs = best_observation(trace["steps"], int(target["id"])) if target else None
+    winner_obs = best_observation(trace["steps"], int(winner["id"])) if winner else None
     hit = winner_card == target_index and winner_offset is not None and winner_offset <= 48
     if hit:
         category = "hit"
