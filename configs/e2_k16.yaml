@@ -1,0 +1,17 @@
+# D29 set-size test at 16K (T19 E2 part 1). Only K differs from the frozen E1 configuration.
+name: e2_setsize_k16
+run_tag: e2k16
+k: 16
+checkpoint: checkpoints/fovea/20260925T145236155331Z-b107b36e/epoch-008.pt
+retina_fit: reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json
+two_stage_fit: reports/calibration/two-stage-platt-20260925T151159460820Z-3d80b18c.json
+methods: [saccadenet_lite, two_stage]
+resolutions: [[15360, 8640]]
+test_seed_start: 30000
+test_seed_count: 50
+full_16k_count: 20
+development_seed_start: 20050
+development_smoke_count: 2
+tile_outputs: 48
+two_stage_threshold: 0.95
+match_radius: 48

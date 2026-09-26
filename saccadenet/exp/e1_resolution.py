@@ -171,7 +171,8 @@ def main() -> None:
         if store.needs_run((method, width, height, seed)):
             grouped.setdefault((width, height, seed), []).append(method)
     for (width, height, seed), methods in grouped.items():
-        config = EpisodeConfig(width=width, height=height, query=seed % 10)
+        # K defaults to the frozen E1 value; E2 (D29) varies it per run.
+        config = EpisodeConfig(width=width, height=height, query=seed % 10, k=int(cfg.get("k", 12)))
         canvas_start = time.perf_counter()
         try:
             image, truth = make_canvas(config, seed, bank)

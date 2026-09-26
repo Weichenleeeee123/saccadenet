@@ -26,15 +26,15 @@ MATCH = 144.0  # tracker merge radius; a candidate within it is attributed to th
 EDGES = np.array([0, 250, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000, 6000, 8000, 12000, 18000], dtype=float)
 
 
-def card_centers(width: int, height: int, seed: int) -> np.ndarray:
-    config = EpisodeConfig(width=width, height=height)
+def card_centers(width: int, height: int, seed: int, k: int = 12) -> np.ndarray:
+    config = EpisodeConfig(width=width, height=height, k=k)
     layout_rng = np.random.default_rng(np.random.SeedSequence(seed).spawn(4)[1])
     return _place_centers(config, layout_rng).astype(float)
 
 
 def checked_centers(trace: dict) -> np.ndarray:
     _, width, height, seed = trace["key"]
-    centers = card_centers(width, height, seed)
+    centers = card_centers(width, height, seed, trace.get("_k", 12))
     if not np.allclose(centers[int(trace["truth_target_index"])], trace["truth_target_xy"]):
         raise ValueError(f"layout regeneration does not match saved truth for {trace['key']}")
     return centers
@@ -108,7 +108,7 @@ def glimpse_decomposition(trace: dict) -> dict:
     anchors = {((c + 0.5) * width / grid, (r + 0.5) * height / grid) for c in range(grid) for r in range(grid)} | {(width / 2, height / 2)}
     fixations = [tuple(step["fixation_xy"]) for step in trace["steps"]]
     explore = sum(1 for f in fixations if any(abs(f[0] - x) < 1e-6 and abs(f[1] - y) < 1e-6 for x, y in anchors))
-    all_found = next((index + 1 for index, step in enumerate(trace["steps"]) if len(step["candidates"]) >= 12), None)
+    all_found = next((index + 1 for index, step in enumerate(trace["steps"]) if len(step["candidates"]) >= trace.get("_k", 12)), None)
     return {"grid": grid, "explore_glimpses": explore, "verify_glimpses": len(fixations) - explore, "step_all_candidates": all_found if all_found else ""}
 
 
@@ -123,6 +123,9 @@ def analyze(run_dir: Path, out: Path, method: str = "saccadenet_lite") -> Path:
     traces = load_traces(run_dir, method)
     if not traces:
         raise ValueError("no SaccadeNet traces found")
+    k = int(json.loads((run_dir / "config.json").read_text(encoding="utf-8")).get("k", 12))
+    for trace in traces:
+        trace["_k"] = k
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     target = out / f"trace-analysis-{run_dir.name}-{method}-{stamp}"
     target.mkdir(parents=True, exist_ok=False)
