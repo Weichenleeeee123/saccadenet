@@ -91,3 +91,37 @@ def test_experiment_driver_dispatches_confirmation_method():
     )
     assert result.reason == "threshold"
     assert result.trace[0]["unscored_count"] == 0
+
+
+def test_episode_fixed_route_differs_from_gain_on_unscored_card():
+    image = np.full((1080, 1920, 3), 126, dtype=np.uint8)
+    image[444:636, 864:1056] = 225
+    image[444:636, 1204:1396] = 225
+    sensor = SceneSensor(build_pyramid(image))
+    config = EpisodeConfig(k=2, query=0, t_max=2, tau=0.9999)
+    episode_input = EpisodeInput(query=0, width=1920, height=1080, expected_k=2)
+    gain = run_episode(
+        sensor, episode_input, config, NarrowCalibrator(), BrightCardNet(),
+        device=torch.device("cpu"), strategy="gain",
+    )
+    fixed = run_episode(
+        sensor, episode_input, config, NarrowCalibrator(), BrightCardNet(),
+        device=torch.device("cpu"), strategy="fixed",
+    )
+    assert len(gain.trace[0]["candidates"]) == 2
+    assert np.linalg.norm(np.asarray(gain.trace[1]["fixation_xy"]) - (1300, 540)) < 48
+    assert np.linalg.norm(np.asarray(fixed.trace[1]["fixation_xy"]) - (960, 540)) < 48
+
+
+def test_experiment_driver_dispatches_policy_variants():
+    image = np.full((1080, 1920, 3), 126, dtype=np.uint8)
+    image[444:636, 864:1056] = 225
+    image[444:636, 1204:1396] = 225
+    config = EpisodeConfig(k=2, query=0, t_max=2, tau=0.9999)
+    for method in ("saccadenet_map", "saccadenet_fixed", "saccadenet_random"):
+        result = run_job(
+            method, image, config, BrightCardNet(), NarrowCalibrator(), None,
+            device=torch.device("cpu"), tile_outputs=48, two_stage_threshold=0.95,
+            policy_seed=20262,
+        )
+        assert result.steps == 2

@@ -42,6 +42,8 @@ def run_episode(
     *,
     device: torch.device,
     require_all_scored: bool = False,
+    strategy: str = "gain",
+    policy_seed: int = 0,
 ) -> EpisodeLog:
     if (episode_input.width, episode_input.height, episode_input.expected_k) != (config.width, config.height, config.k):
         raise ValueError("episode input and configuration disagree")
@@ -57,6 +59,7 @@ def run_episode(
     )
     tracker = CandidateTracker(merge_radius=config.candidate_merge_radius)
     fusion = FusionB()
+    policy_rng = np.random.default_rng(policy_seed)
     network.eval()
     current = (config.width / 2, config.height / 2)
     visited_anchors = {current}
@@ -137,7 +140,8 @@ def run_episode(
             if next_fixation is None:
                 omega = fixation_candidates(candidates, e_half=96, canvas_shape=(config.height, config.width))
                 next_fixation = choose_fixation(
-                    posterior, candidates, fusion, omega, current=current, dprime=calibrator.dprime
+                    posterior, candidates, fusion, omega, current=current, dprime=calibrator.dprime,
+                    strategy=strategy, step=step, rng=policy_rng,
                 )
                 meter.add_semantic("routing", len(candidates) * max(1, len(omega)) * 10)
             else:

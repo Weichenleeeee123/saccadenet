@@ -116,9 +116,12 @@ def write_summary(run_dir: Path, jobs: list[tuple[str, int, int, int]]) -> Path:
 def run_job(
     method: str, image: np.ndarray, config: EpisodeConfig, network: FoveaNet,
     retina_calibrator: GaussianCalibrator, two_stage_calibrator: PlattCalibration,
-    *, device: torch.device, tile_outputs: int, two_stage_threshold: float,
+    *, device: torch.device, tile_outputs: int, two_stage_threshold: float, policy_seed: int = 0,
 ):
-    if method in ("saccadenet_lite", "saccadenet_derived_grid", "saccadenet_confirm_unscored"):
+    if method in (
+        "saccadenet_lite", "saccadenet_derived_grid", "saccadenet_confirm_unscored",
+        "saccadenet_map", "saccadenet_fixed", "saccadenet_random",
+    ):
         if method == "saccadenet_derived_grid":
             # D27: grid from the analytic horizon, keeping the frozen 15-glimpse verification margin (40 - 5*5).
             grid = derived_grid(config.width, config.height, detection_horizon(config.card_size, config.sectors)[0])
@@ -128,6 +131,11 @@ def run_job(
             sensor, EpisodeInput(config.query, config.width, config.height, config.k),
             config, retina_calibrator, network, device=device,
             require_all_scored=method == "saccadenet_confirm_unscored",
+            strategy={
+                "saccadenet_map": "map", "saccadenet_fixed": "fixed",
+                "saccadenet_random": "random",
+            }.get(method, "gain"),
+            policy_seed=policy_seed,
         )
     if method == "full_res_sliding":
         return run_full_res_sliding(image, config.query, network, device=device, tile_outputs=tile_outputs)
@@ -214,7 +222,7 @@ def main() -> None:
             try:
                 if image is None:
                     raise canvas_error
-                result = run_job(method, image, config, network, retina_calibrator, two_stage_calibrator, device=device, tile_outputs=cfg["tile_outputs"], two_stage_threshold=cfg["two_stage_threshold"])
+                result = run_job(method, image, config, network, retina_calibrator, two_stage_calibrator, device=device, tile_outputs=cfg["tile_outputs"], two_stage_threshold=cfg["two_stage_threshold"], policy_seed=seed)
                 if torch.cuda.is_available():
                     torch.cuda.synchronize()
                 evaluation = evaluate_answer(result.answer_xy, truth, match_radius=cfg["match_radius"])

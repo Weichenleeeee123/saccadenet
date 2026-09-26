@@ -34,6 +34,37 @@ def test_map_policy_chooses_largest_posterior():
     assert chosen == (90, 90)
 
 
+def test_fixed_policy_cycles_candidate_options_without_using_posterior():
+    candidates = [_candidate(0, 50, 50), _candidate(1, 90, 90)]
+    options = [candidate.xy for candidate in candidates]
+    posterior = np.asarray((0.01, 0.99))
+    assert choose_fixation(
+        posterior, candidates, FusionB(), options,
+        current=(0, 0), dprime=lambda e: 1.0, strategy="fixed", step=0,
+    ) == (50, 50)
+    assert choose_fixation(
+        posterior, candidates, FusionB(), options,
+        current=(0, 0), dprime=lambda e: 1.0, strategy="fixed", step=1,
+    ) == (90, 90)
+
+
+def test_random_policy_replays_with_same_seed():
+    candidates = [_candidate(0, 50, 50), _candidate(1, 90, 90)]
+    options = [candidate.xy for candidate in candidates]
+    first = choose_fixation(
+        np.asarray((0.5, 0.5)), candidates, FusionB(), options,
+        current=(0, 0), dprime=lambda e: 1.0, strategy="random",
+        rng=np.random.default_rng(123),
+    )
+    again = choose_fixation(
+        np.asarray((0.9, 0.1)), candidates, FusionB(), options,
+        current=(0, 0), dprime=lambda e: 1.0, strategy="random",
+        rng=np.random.default_rng(123),
+    )
+    assert first == again
+    assert first in options
+
+
 def test_no_candidate_uses_fixed_grid_then_exhausts():
     visited = set()
     first = exploration_anchor(500, 300, grid=5, visited=visited, current=(250, 150))

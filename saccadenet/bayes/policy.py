@@ -33,6 +33,8 @@ def choose_fixation(
     dprime: Callable[[float], float],
     strategy: str = "gain",
     epsilon: float = 1e-4,
+    step: int = 0,
+    rng: np.random.Generator | None = None,
 ) -> tuple[float, float] | None:
     if len(posterior) != len(candidates):
         raise ValueError("posterior and candidates differ in length")
@@ -40,11 +42,17 @@ def choose_fixation(
         return None
     if strategy == "map":
         return candidates[int(np.argmax(posterior))].xy
-    if strategy != "gain":
+    if strategy not in ("gain", "fixed", "random"):
         raise ValueError(f"unknown strategy: {strategy}")
     options = list(omega)
     if not options:
         return None
+    if strategy == "fixed":
+        return options[step % len(options)]
+    if strategy == "random":
+        if rng is None:
+            raise ValueError("random strategy requires a seeded generator")
+        return options[int(rng.integers(len(options)))]
     gains = []
     for xy in options:
         gain = sum(
