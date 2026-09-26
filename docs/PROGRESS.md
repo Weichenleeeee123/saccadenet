@@ -1,5 +1,7 @@
 # SaccadeNet 进度看板
 
+2026-09-26 Codex 进展：B02已定位主要错误来源（[诊断](../reports/recovery/b02-diagnosis-20260926.md)）；B03外围卡片中心修正通过新开发种子配对，命中93→99/100，但端到端仍慢约3–4倍，见[定位对比](../reports/recovery/b03-localization-20260926.md)。下一步评估停机风险与CPU视网膜采样开销；最终留出尚未运行。
+
 2026-09-26 Codex 进展：B01 测量修复与无粗分类两阶段开发对照已完成，144/144局、全套82测试通过。开发结果见 [B01复测](../reports/recovery/b01-development-20260926.md)，B02定位/校准诊断进行中。当前 SaccadeNet 在新对照下仍未建立优势；本轮数据仅供开发，不替代正式E1。
 
 最新状态（2026-09-26，Codex）：E1/E5/E2/扇区探针均已有历史结果；A01 代码与结果审计完成，证据 [AUDIT-2026-09-26.md](AUDIT-2026-09-26.md)。当前版本相对两阶段仍无端到端优势；修复与新实验没有执行。分支 `codex/audit-v02`，提交标题 `docs(A01): audit v0.2 claims and prioritize performance recovery`。下面时间线与原有勾选保留，最新交接见 HANDOFF。
