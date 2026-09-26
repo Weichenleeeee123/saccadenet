@@ -1,6 +1,6 @@
 # 接手说明
 
-更新时间：2026-09-26 00:22（Asia/Taipei）。本次交接点：Codex在23:40额度耗尽，Claude接手。正式E1已完成审计，T12–T14完成；D24缩图公平性补跑和D26视野分析完成；E5（24K外推）运行中；下一步写T15报告。
+更新时间：2026-09-26 09:20（Asia/Taipei）。本次交接点：P0收口。T01–T05、T10–T14完成；T15除“按赛事格式”一项外完成；T16已完成记录、复现、覆盖核查，并打了本地标签`v0.1-demo`；剩下的限时排练和正式提交需要人来做。补充检验D24–D28都已完成。**当前没有运行中的实验进程。**
 
 ## 现在实际有什么
 
@@ -9,13 +9,15 @@
 - 新增规划文档见根目录 README。规划提交可通过 `git log -5 --oneline` 查看，标题为 `docs: add execution plan and handoff tracking`。
 - 正式E1：`runs/20260925T152349319841Z-a6a00495-e1-final`（a6a0049，clean，1,520/1,520）。结果与判定见`docs/report.md`，审计见`reports/e1/qa.md`，图4/5见`reports/e1/…-20260925T153721798894Z/`。
 - D24缩图公平性补跑：`runs/20260925T155609286059Z-71b803aa-g2v2-final`；图5b见`reports/e1/g2-sensitivity-20260925T160936102578Z/`。D26 trace分析（图6）见`reports/analysis/trace-analysis-…161032135437Z/`；解析模型代码在`saccadenet/retina/horizon.py`。
-- E5（D27，24K外推检验）：`runs/20260925T161450886661Z-a4660741-e5-final`（a466074，clean，计划150局）。命令`.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e5_extrapolation.yaml`。若中断，用`--resume runs/20260925T161450886661Z-a4660741-e5-final`续跑。`…161406097212Z-7ff5cbd4-e5-final`是因dirty而停掉的那次，只有1局，只作审计，不参与分析。
+- E5（D27/D28，24K外推检验）：`runs/20260925T161450886661Z-a4660741-e5-final`（a466074，clean，150/150局，已完成）。`…161406097212Z-7ff5cbd4-e5-final`是因dirty而停掉的那次，只有1局，只作审计，不参与分析。最终图6/7/8所在目录列在D28里。
+- 报告`docs/report.md`；路演提纲`reports/presentation-outline.md`；复现命令与独立复现记录`docs/REPRODUCE.md`；P0覆盖核查在`docs/PROGRESS.md`。
+- 复现用的独立工作树`D:\saccadenet\.worktrees\repro-20260926`（detached，a0b39ec）只用于核对，不在里面开发。里面有复制来的`data/`、v1权重、一次冒烟run和`.tmp/`，以及一个未跟踪的`.tmp_fig.txt`。这些都可以由用户决定是否清理，代理不删。
 - Demo：`python -m saccadenet.viz.demo_player --run <E1 run> --episode method:WxH:seed=说明`生成到`artifacts/demo/demo-*/index.html`，可以直接双击离线打开；清单在`reports/replay/`。
 - MNIST在忽略目录`data/mnist`。
 - v1主权重：`checkpoints/fovea/20260925T145236155331Z-b107b36e/epoch-008.pt`，SHA256 `3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9`；retina标定：`reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json`；两阶段Platt：`reports/calibration/two-stage-platt-20260925T151159460820Z-3d80b18c.json`。权重被Git忽略，跨机交接必须实际复制。
 - 开发32局冒烟首次全部因trace序列化报错，错误保留于`runs/20260925T151457474939Z-d222f1d5-e1-smoke`；修复后同目录第二次attempt 32/32成功。随后新增`sensing_bytes`字段，旧目录schema不可续跑。最终schema另建`runs/20260925T151923188489Z-d222f1d5-e1-smoke`，32/32成功、`summary-2.csv`有理想滑窗成本列。
 - 没有远端；不能认为项目已备份到 GitHub。
-- 已核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；2026-09-26 00:17 D盘剩余约5.2 GiB，**C盘剩余0字节**：系统管理的`C:\pagefile.sys`在24K实验时扩到2.6 GB。需要用户重启，或把C盘分页文件关掉（D盘已有24 GB分页文件）。这是系统设置，代理不能改。大于16K的实验会推高内存，不要并行跑。项目venv中PyTorch 2.6.0+cu126已通过GPU小张量测试。16K全分辨率滑窗开发首局推理约6.8秒，画布生成约4.6秒，尚无需租算力。
+- 已核验：RTX 4070 Laptop / 8188 MiB VRAM，驱动580.88，RAM约15.7 GiB；2026-09-26 00:17 D盘剩余约5.2 GiB，C盘一度剩0字节：系统管理的`C:\pagefile.sys`在24K实验时扩到了2.6 GB。09:13复查时C盘剩1.6 GB，D盘剩4.5 GB。如果再跑大于16K的实验，C盘可能又被占满，需要用户重启，或把C盘分页文件关掉（D盘已有24 GB分页文件）。这是系统设置，代理不能改。大于16K的实验会推高内存，不要并行跑。项目venv中PyTorch 2.6.0+cu126已通过GPU小张量测试。16K全分辨率滑窗开发首局推理约6.8秒，画布生成约4.6秒，尚无需租算力。
 
 ## 接手后的第一步
 
@@ -53,6 +55,11 @@ H0记录为2026-09-25 22:13 +08。用户于09-26 00:00确认最终只交SaccadeN
 - 下一项唯一优先动作、阻塞条件及解除方式。
 - 复现需要的配置、权重清单、数据版本和产物位置。
 
-当前下一项：E5跑完后按D27逐条判定并写进报告；然后做T15，改写`docs/report.md`：解析视野模型、G2公平性、失败机制、与两阶段的取舍、答辩短答，并出幻灯片提纲；最后T16冻结。T06–T09里未做的验收步骤（真实视网膜重建增强、d′曲线图、协方差诊断）如实保持未勾选。查看`git status --short --branch`确认有无未提交改动；`runs/`、`artifacts/`被Git忽略属于正常，不是丢失。
+当前下一项（按优先级）：
+1. **人工**：拿到赛事的提交格式、页数和时长，按`reports/presentation-outline.md`做幻灯片，至少限时排练两次，然后正式提交并保存回执（T15最后一项、T16最后两项）。
+2. **可选P1，时间够再做**：用同一套模型预测，在“无卡片、杂乱背景”的任务上，粗到细会失效而注视搜索仍然需要。要先登记预测再跑，并且需要新的候选检测器，工作量较大。另一个选项是T17的缩减版E3（A/B融合×增益/MAP，τ=0.95）。
+3. 如果改了代码：新提交、重跑受影响的测试和冒烟，不覆盖`v0.1-demo`标签，另打新标签。
 
-（2026-09-25 旧的下一项“运行正式E1”已完成，见上。）
+未完成且如实保持未勾选的验收：T06真实视网膜重建增强与过拟合检查、T07无效mask计数与高斯拟合诊断、T09 Level 1诊断入口。查看`git status --short --branch`确认有无未提交改动；`runs/`、`artifacts/`被Git忽略属于正常，不是丢失。
+
+（2026-09-25的旧下一项“运行正式E1”和2026-09-26 00:22的“T15/T16”都已完成，见上。）
