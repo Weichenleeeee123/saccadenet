@@ -1,5 +1,7 @@
 # SaccadeNet 进度看板
 
+最新状态（2026-09-26，Codex）：E1/E5/E2/扇区探针均已有历史结果；A01 代码与结果审计完成，证据 [AUDIT-2026-09-26.md](AUDIT-2026-09-26.md)。当前版本相对两阶段仍无端到端优势；修复与新实验没有执行。分支 `codex/audit-v02`，提交标题 `docs(A01): audit v0.2 claims and prioritize performance recovery`。下面时间线与原有勾选保留，最新交接见 HANDOFF。
+
 更新时间：2026-09-26 00:20（Asia/Taipei）。阶段：**正式E1完成并审计；T12–T14完成；D24/D26事后分析完成；E5外推检验运行中；下一步T15报告**。H0为2026-09-25 22:13；提交截止按2026-09-27 12:00排期（依据同赛道记录，用户确认只交SaccadeNet）。
 
 详细步骤的唯一勾选来源：[执行计划](superpowers/plans/2026-09-25-saccadenet-execution-plan.md)。这里的勾选只代表整个阶段通过，不能代替步骤证据。
