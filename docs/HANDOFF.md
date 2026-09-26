@@ -1,6 +1,6 @@
 # 接手说明
 
-更新时间：2026-09-26 09:20（Asia/Taipei）。本次交接点：P0收口。T01–T05、T10–T14完成；T15除“按赛事格式”一项外完成；T16已完成记录、复现、覆盖核查，并打了本地标签`v0.1-demo`；剩下的限时排练和正式提交需要人来做。补充检验D24–D28都已完成。**当前没有运行中的实验进程。**
+更新时间：2026-09-26 10:10（Asia/Taipei）。本次交接点：P0已收口（标签`v0.1-demo`）。之后完成了P1：E2集合大小（D29/D30）、扇区检测探针（D31/D32），Demo加入了24K对照并生成备用截图，打标签`v0.2-analysis`。剩下的限时排练和正式提交需要人来完成。**当前没有运行中的实验进程。**
 
 ## 现在实际有什么
 
@@ -10,6 +10,8 @@
 - 正式E1：`runs/20260925T152349319841Z-a6a00495-e1-final`（a6a0049，clean，1,520/1,520）。结果与判定见`docs/report.md`，审计见`reports/e1/qa.md`，图4/5见`reports/e1/…-20260925T153721798894Z/`。
 - D24缩图公平性补跑：`runs/20260925T155609286059Z-71b803aa-g2v2-final`；图5b见`reports/e1/g2-sensitivity-20260925T160936102578Z/`。D26 trace分析（图6）见`reports/analysis/trace-analysis-…161032135437Z/`；解析模型代码在`saccadenet/retina/horizon.py`。
 - E5（D27/D28，24K外推检验）：`runs/20260925T161450886661Z-a4660741-e5-final`（a466074，clean，150/150局，已完成）。`…161406097212Z-7ff5cbd4-e5-final`是因dirty而停掉的那次，只有1局，只作审计，不参与分析。最终图6/7/8所在目录列在D28里。
+- E2（16K、K=4–64）的run目录列在D30里；K=8请用clean的`…012810581470Z-cdf49baf-e2k8-final`，dirty的`…011914091930Z-867db6c1-e2k8-final`只作审计。图9在`reports/analysis/setsize-20260926T013124432780Z/`，图10在`reports/analysis/horizon-probe-20260926T012629819570Z/`。
+- 最新Demo是`artifacts/demo/demo-20260926T013441565773Z/index.html`，共4局：16K、24K冻结、24K推导、1080p失败；备用截图在`reports/replay/snapshots-20260926T013503985083Z/`。
 - 报告`docs/report.md`；路演提纲`reports/presentation-outline.md`；复现命令与独立复现记录`docs/REPRODUCE.md`；P0覆盖核查在`docs/PROGRESS.md`。
 - 复现用的独立工作树`D:\saccadenet\.worktrees\repro-20260926`（detached，a0b39ec）只用于核对，不在里面开发。里面有复制来的`data/`、v1权重、一次冒烟run和`.tmp/`，以及一个未跟踪的`.tmp_fig.txt`。这些都可以由用户决定是否清理，代理不删。
 - Demo：`python -m saccadenet.viz.demo_player --run <E1 run> --episode method:WxH:seed=说明`生成到`artifacts/demo/demo-*/index.html`，可以直接双击离线打开；清单在`reports/replay/`。
@@ -56,9 +58,9 @@ H0记录为2026-09-25 22:13 +08。用户于09-26 00:00确认最终只交SaccadeN
 - 复现需要的配置、权重清单、数据版本和产物位置。
 
 当前下一项（按优先级）：
-1. **人工**：拿到赛事的提交格式、页数和时长，按`reports/presentation-outline.md`做幻灯片，至少限时排练两次，然后正式提交并保存回执（T15最后一项、T16最后两项）。
-2. **可选P1，时间够再做**：用同一套模型预测，在“无卡片、杂乱背景”的任务上，粗到细会失效而注视搜索仍然需要。要先登记预测再跑，并且需要新的候选检测器，工作量较大。另一个选项是T17的缩减版E3（A/B融合×增益/MAP，τ=0.95）。
-3. 如果改了代码：新提交、重跑受影响的测试和冒烟，不覆盖`v0.1-demo`标签，另打新标签。
+1. **人工**：拿到赛事的提交格式、页数和时长，按`reports/presentation-outline.md`做幻灯片（图和截图都已就绪），至少限时排练两次，然后正式提交并保存回执（T15最后一项、T16最后两项）。
+2. **可选**：卡片关闭的E2第二部分；T17缩减版E3。按模型分析，这两项对主结论的边际价值较低，时间紧可以不做。
+3. 如果改了代码：新提交，重跑受影响的测试和冒烟，不覆盖已有标签，另打新标签。**多个run串行时，运行期间不要在仓库里新建或修改文件**，否则后启动的run会被记成dirty；草稿写到`.tmp/`。
 
 未完成且如实保持未勾选的验收：T06真实视网膜重建增强与过拟合检查、T07无效mask计数与高斯拟合诊断、T09 Level 1诊断入口。查看`git status --short --branch`确认有无未提交改动；`runs/`、`artifacts/`被Git忽略属于正常，不是丢失。
 

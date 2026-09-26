@@ -65,6 +65,16 @@ Dry-run应列四档四方法、1,520个逻辑局、权重/标定SHA256。开发�
 .\.venv\Scripts\python.exe -m saccadenet.viz.demo_player --run runs/20260925T152349319841Z-a6a00495-e1-final --episode "saccadenet_lite:15360x8640:30000=16K 第一个测试种子" --episode "saccadenet_lite:1920x1080:30002=第一个失败局"
 ```
 
+```powershell
+# E2（D29/D30）：16K集合大小，每个K约5分钟；多个run串行时，运行期间不要改仓库文件（启动时会记录dirty）
+foreach ($k in 4,8,16,32,64) { .\.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e2_k$k.yaml }
+.\.venv\Scripts\python.exe -m saccadenet.exp.setsize --runs <K=4..64 的五个run目录>
+# D31/D32：扇区数与检测半径（开发集，只做检测，约40秒）
+.\.venv\Scripts\python.exe -m saccadenet.exp.horizon_probe
+# 路演备用截图（需要Edge或Chrome）
+.\.venv\Scripts\python.exe -m scripts.demo_snapshots --demo artifacts/demo/<demo目录>
+```
+
 分析脚本每次都写入带时间戳的新目录，报告引用的最终目录列在D28里；同名前缀、时间更早的目录是排版草稿，保留备查。
 
 ## 独立工作目录复现记录（T16，2026-09-26 09:12）
