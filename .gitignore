@@ -1,5 +1,6 @@
 # Local environments and tool caches
 .worktrees/
+.tmp/
 .venv/
 __pycache__/
 *.py[cod]
@@ -8,6 +9,7 @@ __pycache__/
 .ruff_cache/
 
 # Secrets and machine-local configuration
+.claude/
 .env
 .env.*
 !.env.example

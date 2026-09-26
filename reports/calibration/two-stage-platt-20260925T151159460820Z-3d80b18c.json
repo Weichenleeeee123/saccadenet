@@ -1,0 +1,13 @@
+{
+  "checkpoint_sha256": "3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9",
+  "split": "calibration",
+  "seed_start": 10000,
+  "scenes": 250,
+  "n_positive": 250,
+  "n_negative": 2750,
+  "slope": 0.7174899644675281,
+  "intercept": -0.2983042833153803,
+  "brier": 0.00362003482591221,
+  "stop_threshold": 0.95,
+  "note": "Oracle card centers used only for calibration labels/crops; inference uses coarse detector."
+}

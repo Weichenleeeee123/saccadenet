@@ -1,0 +1,8 @@
+{
+  "source_run": "runs\\20260926T041815320846Z-9beffd30-recovery_b03-smoke",
+  "n": 100,
+  "categories": {
+    "hit": 99,
+    "target_not_scored": 1
+  }
+}

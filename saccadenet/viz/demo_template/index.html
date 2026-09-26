@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaccadeNet 回放</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"></span>
+    <div>
+      <h1>SaccadeNet</h1>
+      <p class="sub" id="subtitle">—</p>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" aria-label="选择回放局"></nav>
+</header>
+
+<main class="layout">
+  <section class="stage-wrap" aria-label="画面">
+    <div class="stage-head">
+      <div class="view-toggle" role="group" aria-label="画面模式">
+        <button data-view="seen" class="on">网络所见</button>
+        <button data-view="real">真实画面</button>
+      </div>
+      <div class="step-readout"><span id="stepNo">1</span><span class="of">/ <span id="stepTotal">1</span> 眼</span></div>
+    </div>
+    <div class="stage">
+      <canvas id="stage" width="1280" height="720"></canvas>
+      <div class="stage-note" id="stageNote"></div>
+    </div>
+    <div class="controls">
+      <button id="first" title="第一眼 (Home)">⏮</button>
+      <button id="prev" title="上一眼 (←)">◀</button>
+      <button id="play" class="play" title="播放/暂停 (空格)">▶</button>
+      <button id="next" title="下一眼 (→)">▶▏</button>
+      <input id="scrub" type="range" min="0" max="0" value="0" aria-label="注视步">
+      <label class="speed">速度
+        <select id="speed"><option value="1400">慢</option><option value="800" selected>中</option><option value="380">快</option></select>
+      </label>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="panel eye">
+      <div class="panel-title">中央凹输入 <span>96×96 px</span></div>
+      <img id="fovea" alt="当前注视点的中央凹输入">
+    </div>
+    <div class="panel">
+      <div class="panel-title">注视点周围 <span id="zoomSpan"></span></div>
+      <img id="zoom" alt="视网膜在注视点周围保留的信息">
+    </div>
+    <div class="panel">
+      <div class="panel-title">候选后验 <span id="candCount"></span></div>
+      <ol class="bars" id="bars"></ol>
+    </div>
+  </aside>
+
+  <section class="ledger" aria-label="计算账本">
+    <div class="meter">
+      <div class="k">累计语义算量</div>
+      <div class="v"><span id="semantic">0</span><small id="semanticUnit">GFLOPs</small></div>
+    </div>
+    <div class="meter">
+      <div class="k">累计读取</div>
+      <div class="v"><span id="bytes">0</span><small>MB</small></div>
+    </div>
+    <div class="meter">
+      <div class="k">最大后验</div>
+      <div class="v"><span id="maxp">0</span></div>
+    </div>
+    <div class="compare">
+      <div class="k">同一张图，各方法的语义算量 <em>对数刻度</em></div>
+      <div id="compare"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" id="foot"></footer>
+<script src="data.js"></script>
+<script src="player.js"></script>
+</body>
+</html>

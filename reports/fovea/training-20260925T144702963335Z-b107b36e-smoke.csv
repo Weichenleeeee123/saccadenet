@@ -1,0 +1,2 @@
+epoch,train_loss,validation_accuracy,clear_digit_accuracy,seconds,checkpoint
+1,2.3936747908592224,0.125,0.14414414414414414,12.38050579999981,checkpoints\fovea\20260925T144702963335Z-b107b36e-smoke\epoch-001.pt

@@ -1,0 +1,32 @@
+{
+  "demo_dir": "artifacts\\demo\\demo-20260925T161545399955Z",
+  "source_run": "20260925T152349319841Z-a6a00495-e1-final",
+  "source_git_head": "a6a004952cb6f2ea96210527cfbe3df420571441",
+  "checkpoint_sha256": "3d80b18c01e0cb25fb3cc01dea891a5a5f1dcb35bbd8676102e490718bf8eda9",
+  "generated_utc": "20260925T161545399955Z",
+  "checks": "frame count == trace steps == episodes.csv steps; last-frame semantic FLOPs == episodes.csv; regenerated target == saved truth",
+  "episodes": [
+    {
+      "spec": "saccadenet_lite:15360x8640:30000",
+      "selection_reason": "16K 第一个测试种子，非挑选",
+      "frames": 30,
+      "reason": "threshold",
+      "hit": 1
+    },
+    {
+      "spec": "saccadenet_lite:1920x1080:30000",
+      "selection_reason": "1080p 第一个测试种子",
+      "frames": 10,
+      "reason": "threshold",
+      "hit": 1
+    },
+    {
+      "spec": "saccadenet_lite:1920x1080:30002",
+      "selection_reason": "按种子顺序的第一个失败：过度自信错停",
+      "frames": 2,
+      "reason": "threshold",
+      "hit": 0
+    }
+  ],
+  "open": "python -m http.server 8765 --directory artifacts\\demo  then  http://127.0.0.1:8765/demo-20260925T161545399955Z/index.html"
+}

@@ -1,0 +1,8 @@
+{
+  "e1_run": "runs\\20260925T152349319841Z-a6a00495-e1-final",
+  "e5_run": "runs\\20260925T161450886661Z-a4660741-e5-final",
+  "e1_analysis": "reports\\analysis\\trace-analysis-20260925T152349319841Z-a6a00495-e1-final-saccadenet_lite-20260925T162451149926Z",
+  "e5_derived_analysis": "reports\\analysis\\trace-analysis-20260925T161450886661Z-a4660741-e5-final-saccadenet_derived_grid-20260925T162357409356Z",
+  "e5_frozen_analysis": "reports\\analysis\\trace-analysis-20260925T161450886661Z-a4660741-e5-final-saccadenet_lite-20260925T162356204290Z",
+  "out": "reports\\analysis"
+}
