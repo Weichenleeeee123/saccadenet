@@ -1,6 +1,14 @@
 # 接手说明
 
-## 最新审计交接（2026-09-26，Codex）
+## 当前交接（2026-09-26，Codex）
+
+主工作区 `D:\saccadenet` 现为 `main`，已通过合并提交 `f63f364` 纳入 `codex/audit-v02` 的已提交工作（审计、计时修正、强两阶段基线、诊断与定位修复）。实施工作树 `D:\saccadenet\.worktrees\implementation` 仍保留在 `codex/audit-v02`，没有删除或清理文件。主工作区原有 `.claude/` 仍存在，现由 `.gitignore` 忽略。没有远端，也没有推送。
+
+合并后在主工作区运行 `D:\saccadenet\.worktrees\implementation\.venv\Scripts\python.exe -m pytest -q`：87 passed、1 条第三方 `dateutil` 弃用警告。当前没有运行中的实验进程。本次按用户要求暂停后续实验；下一项为恢复计划中的 B04 与最终确认，须从 [恢复计划](superpowers/plans/2026-09-26-saccadenet-recovery.md) 和 [B03 报告](../reports/recovery/b03-localization-20260926.md) 接续。B03 的开发集定位改善不等于最终验证，现有速度仍落后于强两阶段基线。
+
+以下为历史交接记录，其中“当前工作树”和“下一步”描述当时状态，以本节为准。
+
+## 历史审计交接（2026-09-26，Codex）
 
 当前工作树仍为 `D:\saccadenet\.worktrees\implementation`，分支已切到 `codex/audit-v02`；审计起点 `2846d58`，历史实施分支 `feat/implementation` 保留。本轮仅审计代码/已有 CSV 并更新文档，没有训练或新推理。最新提交用 `git log -1 --oneline` 查询，标题 `docs(A01): audit v0.2 claims and prioritize performance recovery`。
 
