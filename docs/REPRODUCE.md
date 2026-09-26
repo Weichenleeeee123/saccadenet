@@ -43,6 +43,41 @@ Dry-run应列四档四方法、1,520个逻辑局、权重/标定SHA256。开发�
 
 回放从保存的trace读决策和成本，仅用记录的seed重新生成相同画布与视网膜观察，不重新运行CNN/策略。绿圈真值只在最后一帧由评测层叠加；蓝叉是模型答案。每个frame对应一眼，`replay.json`写帧数、run和Git SHA。可另外对最终失败局导出，选择理由需在报告注明。
 
+## 补充检验、分析图与离线Demo（2026-09-26追加）
+
+下列命令都只读取已保存的run，或者新建run目录，不改动正式E1。每条的预测、判定和证据见`docs/DECISIONS.md`中的D24–D28。
+
+```powershell
+# D24：v2尺度增强权重重跑一段缩图（需要 checkpoints/fovea/20260925T145914395353Z-b43451ba/epoch-005.pt）
+.\.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e1_g2_v2.yaml
+.\.venv\Scripts\python.exe -m saccadenet.viz.figures --run runs/20260925T152349319841Z-a6a00495-e1-final --g2-supplement runs/20260925T155609286059Z-71b803aa-g2v2-final
+# E5（D27）：24K外推，约25分钟；内存峰值约5 GB，不要并行其他大任务
+.\.venv\Scripts\python.exe -m saccadenet.exp.e1_resolution --config configs/e5_extrapolation.yaml
+# D26：trace描述性分析（图6）、两个视野半径（图7）、标度律（图8）
+.\.venv\Scripts\python.exe -m saccadenet.exp.trace_analysis --run runs/20260925T152349319841Z-a6a00495-e1-final
+.\.venv\Scripts\python.exe -m saccadenet.exp.trace_analysis --run runs/20260925T161450886661Z-a4660741-e5-final --method saccadenet_derived_grid
+.\.venv\Scripts\python.exe -m saccadenet.exp.trace_analysis --run runs/20260925T161450886661Z-a4660741-e5-final --method saccadenet_lite
+.\.venv\Scripts\python.exe -m saccadenet.viz.horizons --calibration reports/calibration/calibration-20260925T145532233348Z-3d80b18c-fit.json --horizon <trace-analysis目录>/horizon.csv
+.\.venv\Scripts\python.exe -m saccadenet.viz.scaling --e1-run <E1 run> --e5-run <E5 run> --e1-analysis <E1分析目录> --e5-derived-analysis <E5推导网格分析目录> --e5-frozen-analysis <E5冻结网格分析目录>
+# 质量抽核
+.\.venv\Scripts\python.exe -m scripts.qa_e1_crosscheck --run runs/20260925T152349319841Z-a6a00495-e1-final --plot reports/e1/20260925T152349319841Z-a6a00495-e1-final-20260925T153721798894Z
+# 离线Demo（HTML，可双击打开；导出时自动校验帧数和成本）
+.\.venv\Scripts\python.exe -m saccadenet.viz.demo_player --run runs/20260925T152349319841Z-a6a00495-e1-final --episode "saccadenet_lite:15360x8640:30000=16K 第一个测试种子" --episode "saccadenet_lite:1920x1080:30002=第一个失败局"
+```
+
+分析脚本每次都写入带时间戳的新目录，报告引用的最终目录列在D28里；同名前缀、时间更早的目录是排版草稿，保留备查。
+
+## 独立工作目录复现记录（T16，2026-09-26 09:12）
+
+在新建的独立工作树`D:\saccadenet\.worktrees\repro-20260926`上完成，detached，HEAD为`a0b39ec`。只复制了被Git忽略的`data/mnist/`和v1权重（SHA256已核对），复用同一个venv，没有删除或修改原目录。结果：
+
+- `pytest -q`：79 passed。
+- 开发冒烟`--smoke`：32/32成功，run为`runs/20260925T163142198555Z-a0b39ec5-e1-smoke`（在复现工作树内）。与原冒烟`runs/20260925T151923188489Z-d222f1d5-e1-smoke`逐局比对`target_hit/steps/semantic_flops/reason`，差异为0。
+- 用正式E1保存的`episodes.csv`重画图4/5：16行`plot-data.csv`与已提交版本逐值一致（相对误差≤1e-12）。
+- 重跑`analyze_e1`：四个配对区间与已提交的analysis JSON完全相同。
+
+没有做跨机器或新venv复现；GPU/驱动不同时的数值一致性未验证。
+
 ## 质量检查
 
 对`episodes.csv`核对1520个逻辑键、每键最新attempt、状态、缺失、重复、NaN、成本非负。失败不能从准确率分母消失。至少随机核对5条原始行到summary及图点；正式结果若与开发预检冲突，不改测试集参数。报告主张只对本任务和估算成本口径成立。竞赛提交格式、截止时间与远端地址仍未知，交给接手者后需补齐，但不影响本地实验复现。
